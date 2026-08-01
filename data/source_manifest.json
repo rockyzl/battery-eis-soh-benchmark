@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-08-01",
+  "record_id": 3633835,
+  "doi": "10.5281/zenodo.3633835",
+  "license": "CC-BY-4.0",
+  "api_url": "https://zenodo.org/api/records/3633835",
+  "files": [
+    {
+      "name": "EIS data.zip",
+      "bytes": 26957676,
+      "md5": "9f31069d770d7d323d8e2bf21267afe2",
+      "download_url": "https://zenodo.org/api/records/3633835/files/EIS%20data.zip/content"
+    },
+    {
+      "name": "Capacity data.zip",
+      "bytes": 91703326,
+      "md5": "0dba677f0beeb15b450ef35f5b4faac8",
+      "download_url": "https://zenodo.org/api/records/3633835/files/Capacity%20data.zip/content"
+    }
+  ]
+}

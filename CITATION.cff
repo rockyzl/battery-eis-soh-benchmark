@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite this software and the original Cambridge dataset and article."
+title: "Battery EIS to SoH Benchmark"
+type: software
+authors:
+  - family-names: Zhang
+    given-names: Lu
+version: 0.1.0
+date-released: 2026-08-01
+license: MIT
+references:
+  - type: dataset
+    title: "Identifying degradation patterns of lithium ion batteries from impedance spectroscopy using machine learning"
+    doi: 10.5281/zenodo.3633835
+  - type: article
+    title: "Identifying degradation patterns of lithium ion batteries from impedance spectroscopy using machine learning"
+    doi: 10.1038/s41467-020-15235-7
