@@ -3,8 +3,8 @@
 An independent, clean-room, cleaned-source benchmark based on the public Cambridge lithium-ion
 battery impedance study. The project asks a narrow question:
 
-> Can a model estimate a held-out cell's absolute discharge capacity from one state-V EIS spectrum,
-> and therefore report its capacity-normalized state of health?
+> Can a model estimate a held-out cell's state of health from one state-V EIS spectrum, and does EIS
+> add useful information beyond cycle number and the cell's measured initial capacity?
 
 This is an independent portfolio project inspired by related battery-performance work in Lu Zhang's
 scientific background. It is **not** the original Cambridge implementation and is not presented as
@@ -16,11 +16,14 @@ The source record contains more than 20,000 spectra, but they come from only 12 
 row-random split would allow spectra from the same cell into training and test data and can produce an
 overly optimistic result. This benchmark treats the cell—not the spectrum—as the independent group.
 
-Version 1 is intentionally bounded:
+Version 2 is intentionally bounded:
 
 - public CC BY 4.0 data from Zenodo record `3633835`;
 - state V only: 15-minute rest after full charge;
-- absolute discharge capacity as the fitted target, with SoH reported relative to cycle-0 capacity;
+- SoH percent as the primary fitted target, with absolute capacity and capacity loss retained as
+  separately reported ablations;
+- an explicit `Q0` ablation that measures the value of known cycle-0 capacity without allowing
+  future-capacity leakage;
 - original 25 °C train/test cell split plus grouped leave-one-cell-out evaluation;
 - mean, Ridge, PLS and preregistered GPR-ARD candidates;
 - immutable prediction rows, per-cell metrics and provenance manifests.
@@ -42,12 +45,29 @@ inventory and 60-frequency spectra.
 ```bash
 uv sync --extra dev
 uv run python scripts/fetch_public_data.py
-uv run battery-eis-soh audit --data-root "data/raw/extracted"
-uv run battery-eis-soh evaluate \
+uv run battery-eis-soh selection-audit --data-root "data/raw/extracted"
+uv run battery-eis-soh full-audit \
   --data-root "data/raw/extracted" \
-  --models mean,cycle,ridge,pls \
-  --output artifacts/fixed-split-smoke
+  --acknowledge-test-label-exposure
+uv run battery-eis-soh engineering-evaluate \
+  --data-root "data/raw/extracted" \
+  --task-id T0 \
+  --row-scope all_valid \
+  --output artifacts/soh-primary-smoke \
+  --acknowledge-test-label-exposure
+
+uv run battery-eis-soh engineering-evaluate \
+  --data-root "data/raw/extracted" \
+  --task-id T2 \
+  --row-scope all_valid \
+  --output artifacts/q0-capacity-ablation-smoke \
+  --acknowledge-test-label-exposure
 ```
+
+This command is an engineering smoke and currently loads the historical fixed-test labels. It is not
+the formal nested-selection runner and cannot produce a scientific or resume-approved result.
+The separate `selection-audit` path opens only `25C01`–`25C04`; its tests prove that fixed-test
+capacity and `Q0` files are not parsed.
 
 Download instructions and official checksums are in [`docs/data-card.md`](docs/data-card.md).
 

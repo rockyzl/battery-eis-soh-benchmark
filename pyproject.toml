@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "mypy>=1.15,<2",
   "pytest>=8.3,<9",
   "ruff>=0.11,<1",
 ]
@@ -31,3 +32,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*"]
+ignore_missing_imports = true
