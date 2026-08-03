@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from battery_eis_soh.dataset import load_state_dataset
+from battery_eis_soh.dataset import load_selection_dataset, load_state_dataset
 
 
 def _write_fixture(
@@ -44,6 +44,18 @@ def test_loads_and_normalizes_by_cell(tmp_path: Path) -> None:
     assert np.allclose(dataset.y, [1.0, 0.8])
     assert np.allclose(dataset.capacities_mah, [50.0, 40.0])
     assert dataset.audit.rows_by_cell == {"25C01": 2}
+    assert dataset.audit.initial_capacity_mah_by_cell == {"25C01": 50.0}
+
+
+def test_cycle_zero_reference_is_maximum_cumulative_discharge_endpoint(tmp_path: Path) -> None:
+    _write_fixture(tmp_path, "25C01")
+    capacity_path = tmp_path / "Capacity data" / "Data_Capacity_25C01.txt"
+    rows = capacity_path.read_text().splitlines()
+    rows.insert(2, "0.5 0 0 3.8 -90 20")
+    capacity_path.write_text("\n".join(rows) + "\n")
+    dataset = load_state_dataset(tmp_path, expected_frequency_count=3)
+    assert dataset.audit.initial_capacity_mah_by_cell == {"25C01": 50.0}
+    assert dataset.y[0] == pytest.approx(1.0)
 
 
 def test_drops_incomplete_spectrum_with_audit(tmp_path: Path) -> None:
@@ -66,6 +78,16 @@ def test_requires_explicit_cycle_zero_reference(tmp_path: Path) -> None:
     capacity_path.write_text("\n".join([rows[0], *rows[3:]]) + "\n")
     with np.testing.assert_raises_regex(ValueError, "missing cycle=0 reference"):
         load_state_dataset(tmp_path, expected_frequency_count=3)
+
+
+def test_selection_loader_never_opens_fixed_test_capacity_files(tmp_path: Path) -> None:
+    for cell in ("25C01", "25C02", "25C03", "25C04", "25C05"):
+        _write_fixture(tmp_path, cell)
+    test_capacity = tmp_path / "Capacity data" / "Data_Capacity_25C05.txt"
+    test_capacity.write_text("this fixed-test label file must never be parsed\n")
+    dataset = load_selection_dataset(tmp_path, expected_frequency_count=3)
+    assert dataset.audit.cells == ("25C01", "25C02", "25C03", "25C04")
+    assert "25C05" not in dataset.cells
 
 
 def test_first_public_source_pairing_when_local_data_are_available() -> None:

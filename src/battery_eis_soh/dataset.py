@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import chain
 from pathlib import Path
 
@@ -10,6 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 CELL_RE = re.compile(r"(?P<temperature>25|35|45)C(?P<replicate>\d{2})")
+SELECTION_CELLS_25C = frozenset({"25C01", "25C02", "25C03", "25C04"})
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,7 @@ class DatasetAudit:
     dropped_incomplete_by_cell: dict[str, int]
     missing_capacity_by_cell: dict[str, int]
     frequency_count: int
+    initial_capacity_mah_by_cell: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -115,6 +117,7 @@ def load_state_dataset(
     *,
     state: str = "V",
     expected_frequency_count: int = 60,
+    selected_cells: frozenset[str] | None = None,
 ) -> BatteryDataset:
     eis_root = data_root / "EIS data"
     capacity_root = data_root / "Capacity data"
@@ -134,6 +137,8 @@ def load_state_dataset(
 
     for eis_path in eis_paths:
         cell, temperature = _cell_from_path(eis_path)
+        if selected_cells is not None and cell not in selected_cells:
+            continue
         capacity_path = capacity_root / f"Data_Capacity_{cell}.txt"
         if not capacity_path.is_file():
             raise FileNotFoundError(f"missing capacity file for {cell}")
@@ -178,6 +183,12 @@ def load_state_dataset(
 
     if canonical_frequencies is None:
         raise ValueError("no valid frequency grid")
+    if selected_cells is not None and set(rows_by_cell) != set(selected_cells):
+        missing = sorted(set(selected_cells) - set(rows_by_cell))
+        unexpected = sorted(set(rows_by_cell) - set(selected_cells))
+        raise ValueError(
+            f"selected-cell inventory mismatch; missing={missing}, unexpected={unexpected}"
+        )
     identities = [(item[0], item[2]) for item in samples]
     if len(identities) != len(set(identities)):
         raise ValueError("duplicate joined (cell, EIS cycle) identity")
@@ -199,5 +210,21 @@ def load_state_dataset(
             dropped_incomplete_by_cell=incomplete,
             missing_capacity_by_cell=missing_capacity,
             frequency_count=expected_frequency_count,
+            initial_capacity_mah_by_cell=reference_capacity_by_cell,
         ),
+    )
+
+
+def load_selection_dataset(
+    data_root: Path,
+    *,
+    state: str = "V",
+    expected_frequency_count: int = 60,
+) -> BatteryDataset:
+    """Load only the four training cells; fixed-test capacity/Q0 files are never opened."""
+    return load_state_dataset(
+        data_root,
+        state=state,
+        expected_frequency_count=expected_frequency_count,
+        selected_cells=SELECTION_CELLS_25C,
     )

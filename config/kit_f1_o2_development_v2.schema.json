@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciencesloop.local/schemas/kit_f1_o2_development_v2.schema.json",
+  "title": "KIT F1 primary and blocked O2 capability development v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "config_id", "preparation_revision", "supersedes_config_sha256", "artifact_schema_version", "artifact_schema_sha256", "artifact_paths", "development_only", "seed",
+    "readiness", "source", "targets", "acquisitions", "weights", "validation", "models", "metrics",
+    "resources", "authorization"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_id": {"const": "kit_f1_o2_development_v2"},
+    "preparation_revision": {"const": "paired_eis_go_20260802_v1"},
+    "supersedes_config_sha256": {"const": "b2c5b7a12d0588e42143c97eddabf74299e98e536edb689969be15f55efad88d"},
+    "artifact_schema_version": {"const": "kit_f1_o2_dev_v2"},
+    "artifact_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact_paths": {"const": [
+      "acquisition_manifest.jsonl", "snapshot_manifest.jsonl", "fold_registry.json",
+      "oof_predictions.jsonl", "paired_deltas.json", "retry_sensitivity.json",
+      "engine_summary.json"
+    ]},
+    "development_only": {"const": true},
+    "seed": {"const": 20260801},
+    "readiness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["wave_a_target_data_go", "f1_training_authorized", "timestamp_semantics_verified", "checkup_completion_semantics_verified", "eis_alignment_decision", "eis_readiness_artifact_path", "eis_readiness_artifact_sha256", "expected_paired_snapshots", "paired_cohort_identity_sha256", "paired_design_sha256_by_mode", "planned_trial_keys_sha256", "expected_eis_frequencies", "expected_eis_values"],
+      "properties": {
+        "wave_a_target_data_go": {"const": true},
+        "f1_training_authorized": {"const": true},
+        "timestamp_semantics_verified": {"const": false},
+        "checkup_completion_semantics_verified": {"const": true},
+        "eis_alignment_decision": {"const": "GO_FOR_MINIMAL_PAIRED_DEVELOPMENT_RUN_WITH_EXPLICIT_LIMITATIONS"},
+        "eis_readiness_artifact_path": {"const": "../artifacts/audits/kit-d-core-eis-readiness.json"},
+        "eis_readiness_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "expected_paired_snapshots": {"const": 2919},
+        "paired_cohort_identity_sha256": {"const": "8a84dfb3d7239ee8b8972690f162d404f93733c19316e9b0bf9e4e3a8b20565d"},
+        "paired_design_sha256_by_mode": {
+          "type": "object", "additionalProperties": false,
+          "required": ["calendar", "cyclic", "profile"],
+          "properties": {
+            "calendar": {"const": "ddabf2f4fb7a11acec4eb2b777944f9cc0cf2b0deb71d4945a772556c80d92d9"},
+            "cyclic": {"const": "8c9fc0fae4022b5ac5c56caf432647607ae01e4e2d7a727e9cfbb20e2c61a244"},
+            "profile": {"const": "a9983357be490a92503daefcab7ae69b7fc6357cfe501a2fb6737a08e4be3286"}
+          }
+        },
+        "planned_trial_keys_sha256": {"const": "d17a10007c6228cae0723f71fd5059f22fa3254fdf9ab183cad618834712eb96"},
+        "expected_eis_frequencies": {"const": 27},
+        "expected_eis_values": {"const": 54}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eoc_sha256", "eoc_size_bytes", "eis_sha256", "eis_size_bytes", "expected_real_cells", "expected_capacity_endpoints", "expected_valid_rt50_spectra"],
+      "properties": {
+        "eoc_sha256": {"const": "95de03af7d73efdeed97fcd13fbdca2eeabe85b2971b08394b665c8639b3e140"},
+        "eoc_size_bytes": {"const": 93167507},
+        "eis_sha256": {"const": "bc1c56e05f50a41ed9d9f752f65fc7833b49ad6bc369f67ccfc14288a9815fed"},
+        "eis_size_bytes": {"const": 19894633},
+        "expected_real_cells": {"const": 228},
+        "expected_capacity_endpoints": {"const": 3999},
+        "expected_valid_rt50_spectra": {"const": 3993}
+      }
+    },
+    "targets": {
+      "type": "object", "additionalProperties": false, "required": ["f1", "o2"],
+      "properties": {
+        "f1": {
+          "type": "object", "additionalProperties": false,
+          "required": ["task_id", "kind", "name", "horizon_checkups", "sign", "negative_values", "derived_future_soh", "prediction_interval"],
+          "properties": {
+            "task_id": {"const": "F1_SOH_LOSS_PP_H3"},
+            "kind": {"const": "continuous_regression_primary"},
+            "name": {"const": "soh_loss_pp_h3"},
+            "horizon_checkups": {"const": 3},
+            "sign": {"const": "current_soh_minus_future_soh_positive_means_loss"},
+            "negative_values": {"const": "preserve_without_clipping"},
+            "derived_future_soh": {"const": "current_soh_minus_predicted_soh_loss_pp_h3"},
+            "prediction_interval": {"const": "unavailable_not_frozen"}
+          }
+        },
+        "o2": {
+          "type": "object", "additionalProperties": false,
+          "required": ["task_id", "kind", "name", "loss_threshold_percentage_points", "training_authorized", "display_authorized", "selection_role"],
+          "properties": {
+            "task_id": {"const": "O2_RAPID_LOSS_5PP_H3"},
+            "kind": {"const": "binary_probability_secondary_candidate"},
+            "name": {"const": "rapid_loss_ge_5pp_h3"},
+            "loss_threshold_percentage_points": {"const": 5.0},
+            "training_authorized": {"const": false},
+            "display_authorized": {"const": false},
+            "selection_role": {"const": "none"}
+          }
+        }
+      }
+    },
+    "acquisitions": {"$ref": "#/$defs/acquisitionConfig"},
+    "weights": {"$ref": "#/$defs/weightsConfig"},
+    "validation": {"$ref": "#/$defs/validationConfig"},
+    "models": {"$ref": "#/$defs/modelsConfig"},
+    "metrics": {"$ref": "#/$defs/metricsConfig"},
+    "resources": {"$ref": "#/$defs/resourcesConfig"},
+    "authorization": {"$ref": "#/$defs/configAuthorization"}
+  },
+  "$defs": {
+    "configAuthorization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scientific_result", "publication_ready", "resume_approved", "formal_model_result", "protected_test_result", "timestamp_semantics_provisional", "retry_semantics_provisional", "selection_performed"],
+      "properties": {
+        "scientific_result": {"const": false}, "publication_ready": {"const": false},
+        "resume_approved": {"const": false}, "formal_model_result": {"const": false},
+        "protected_test_result": {"const": false},
+        "timestamp_semantics_provisional": {"type": "boolean"},
+        "retry_semantics_provisional": {"const": true}, "selection_performed": {"const": false}
+      }
+    },
+    "claimFlags": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scientific_result", "publication_ready", "resume_approved", "formal_model_result", "protected_test_result", "timestamp_semantics_provisional", "retry_semantics_provisional", "selection_performed"],
+      "properties": {
+        "scientific_result": {"const": false}, "publication_ready": {"const": false},
+        "resume_approved": {"const": false}, "formal_model_result": {"const": false},
+        "protected_test_result": {"const": false},
+        "timestamp_semantics_provisional": {"const": true},
+        "retry_semantics_provisional": {"const": true}, "selection_performed": {"const": false}
+      }
+    },
+    "artifactBase": {
+      "type": "object",
+      "required": ["artifact_schema_version", "scientific_result", "publication_ready", "resume_approved", "formal_model_result", "protected_test_result", "timestamp_semantics_provisional", "retry_semantics_provisional", "selection_performed"],
+      "properties": {
+        "artifact_schema_version": {"const": "kit_f1_o2_dev_v2"},
+        "scientific_result": {"const": false}, "publication_ready": {"const": false},
+        "resume_approved": {"const": false}, "formal_model_result": {"const": false},
+        "protected_test_result": {"const": false},
+        "timestamp_semantics_provisional": {"const": true},
+        "retry_semantics_provisional": {"const": true}, "selection_performed": {"const": false}
+      }
+    },
+    "acquisitionConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligibility", "primary_policy", "sensitivity_policy", "keep_last_tie_key", "retry_window_seconds", "retry_window_role"],
+      "properties": {
+        "eligibility": {"const": "source_valid_charged_rt50"},
+        "primary_policy": {"const": "equal_finite_mean_per_frequency_v1"},
+        "sensitivity_policy": {"const": "keep_last_acquisition_v1"},
+        "keep_last_tie_key": {"const": ["timestamp_s", "sd_block_id", "source_member", "source_line", "acquisition_id"]},
+        "retry_window_seconds": {"const": 216000},
+        "retry_window_role": {"const": "flag_only_never_group_or_drop"}
+      }
+    },
+    "weightsConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy", "fit_normalization", "metric_normalization"],
+      "properties": {
+        "policy": {"const": "equal_condition_then_cell_then_checkup_v1"},
+        "fit_normalization": {"const": "mean_one"}, "metric_normalization": {"const": "mean_one"}
+      }
+    },
+    "validationConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_group_folds", "inner_group_folds", "group", "minimum_conditions_per_mode", "minimum_conditions_per_validation_fold"],
+      "properties": {
+        "outer_group_folds": {"const": 3}, "inner_group_folds": {"const": 2},
+        "group": {"const": "complete_experimental_condition"},
+        "minimum_conditions_per_mode": {"const": 3},
+        "minimum_conditions_per_validation_fold": {"const": 1}
+      }
+    },
+    "modelsConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["baselines", "elastic_net_regression", "hist_gradient_boosting_regressor", "o2_capability"],
+      "properties": {
+        "baselines": {
+          "type": "object", "additionalProperties": false, "required": ["persistence_zero_loss", "recent_slope_h3"],
+          "properties": {
+            "persistence_zero_loss": {"type": "object", "additionalProperties": false, "required": ["prediction"], "properties": {"prediction": {"const": 0.0}}},
+            "recent_slope_h3": {"type": "object", "additionalProperties": false, "required": ["intervals"], "properties": {"intervals": {"const": 3}}}
+          }
+        },
+        "elastic_net_regression": {"$ref": "#/$defs/elasticNet"},
+        "hist_gradient_boosting_regressor": {"$ref": "#/$defs/hgbRegressor"},
+        "o2_capability": {"$ref": "#/$defs/o2Capability"}
+      }
+    },
+    "elasticNet": {
+      "type": "object", "additionalProperties": false,
+      "required": ["alpha", "l1_ratio", "fit_intercept", "max_iter", "tol", "selection", "random_state"],
+      "properties": {
+        "alpha": {"const": 0.01}, "l1_ratio": {"const": 0.1}, "fit_intercept": {"const": true},
+        "max_iter": {"const": 250000}, "tol": {"const": 0.00001}, "selection": {"const": "cyclic"},
+        "random_state": {"const": 20260801}
+      }
+    },
+    "hgbRegressor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["loss", "learning_rate", "max_leaf_nodes", "max_iter", "min_samples_leaf", "l2_regularization", "early_stopping", "random_state"],
+      "properties": {
+        "loss": {"const": "squared_error"}, "learning_rate": {"const": 0.05},
+        "max_leaf_nodes": {"const": 7}, "max_iter": {"const": 100},
+        "min_samples_leaf": {"const": 20}, "l2_regularization": {"const": 1.0},
+        "early_stopping": {"const": false}, "random_state": {"const": 20260801}
+      }
+    },
+    "o2Capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_authorized", "logistic_elastic_net", "hist_gradient_boosting", "calibration"],
+      "properties": {
+        "training_authorized": {"const": false},
+        "logistic_elastic_net": {"$ref": "#/$defs/logisticClassifier"},
+        "hist_gradient_boosting": {"$ref": "#/$defs/hgbClassifier"},
+        "calibration": {
+          "type": "object", "additionalProperties": false,
+          "required": ["method", "maximum_iterations", "probability_clip"],
+          "properties": {"method": {"const": "weighted_platt_sigmoid_v1"}, "maximum_iterations": {"const": 200}, "probability_clip": {"const": 0.000001}}
+        }
+      }
+    },
+    "logisticClassifier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["C", "l1_ratio", "solver", "max_iter", "tol", "class_weight", "random_state"],
+      "properties": {"C": {"const": 1.0}, "l1_ratio": {"const": 0.5}, "solver": {"const": "saga"}, "max_iter": {"const": 500}, "tol": {"const": 0.0001}, "class_weight": {"type": "null"}, "random_state": {"const": 20260801}}
+    },
+    "hgbClassifier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["learning_rate", "max_leaf_nodes", "max_iter", "min_samples_leaf", "l2_regularization", "early_stopping", "class_weight", "random_state"],
+      "properties": {"learning_rate": {"const": 0.05}, "max_leaf_nodes": {"const": 7}, "max_iter": {"const": 10}, "min_samples_leaf": {"const": 20}, "l2_regularization": {"const": 1.0}, "early_stopping": {"const": false}, "class_weight": {"type": "null"}, "random_state": {"const": 20260801}}
+    },
+    "metricsConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["f1_primary", "f1_secondary", "o2", "bootstrap_draws", "bootstrap_seed", "bootstrap_interval_percent", "minimum_valid_bootstrap_draws"],
+      "properties": {
+        "f1_primary": {"const": "condition_balanced_mae_pp_v1"},
+        "f1_secondary": {"const": ["condition_balanced_median_ae_pp_v1", "condition_balanced_rmse_pp_v1", "condition_balanced_signed_bias_pp_v1", "condition_balanced_r2_v1"]},
+        "o2": {"const": ["condition_balanced_pooled_pr_auc_v1", "condition_balanced_pooled_brier_v1"]},
+        "bootstrap_draws": {"const": 2000}, "bootstrap_seed": {"const": 20260801},
+        "bootstrap_interval_percent": {"const": 95}, "minimum_valid_bootstrap_draws": {"const": 1900}
+      }
+    },
+    "resourcesConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["soft_drain_seconds", "hard_stop_seconds", "heartbeat_max_interval_seconds", "heartbeat_stale_seconds", "soft_rss_bytes", "hard_rss_bytes", "threadpool_limit"],
+      "properties": {"soft_drain_seconds": {"const": 420}, "hard_stop_seconds": {"const": 480}, "heartbeat_max_interval_seconds": {"const": 15}, "heartbeat_stale_seconds": {"const": 30}, "soft_rss_bytes": {"const": 1717986918}, "hard_rss_bytes": {"const": 2147483648}, "threadpool_limit": {"const": 1}}
+    },
+    "acquisitionManifestRow": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["acquisition_id", "cell_id", "condition_id", "timestamp_s", "timestamp_origin", "duration_s", "sd_block_id", "source_archive", "source_archive_sha256", "source_member", "source_line", "aligned_snapshot_id", "within_60h_candidate_only", "same_aligned_checkup_as_previous", "within_60h_candidate_reason", "eis_values"],
+      "properties": {
+        "acquisition_id": {"type": "string"}, "cell_id": {"type": "string"}, "condition_id": {"type": "integer", "minimum": 0},
+        "timestamp_s": {"type": "number"}, "timestamp_origin": {"type": "integer"}, "duration_s": {"type": "number"}, "sd_block_id": {"type": "integer"},
+        "source_archive": {"type": "string"}, "source_archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "source_member": {"type": "string"}, "source_line": {"type": "integer", "minimum": 0},
+        "aligned_snapshot_id": {"type": ["string", "null"]}, "within_60h_candidate_only": {"type": "boolean"}, "same_aligned_checkup_as_previous": {"type": "boolean"},
+        "within_60h_candidate_reason": {"enum": ["within_60h_and_same_aligned_checkup_candidate_only", "within_60h_but_different_aligned_checkup_candidate_only", "not_within_60h_candidate_window"]},
+        "eis_values": {"type": "array", "minItems": 54, "maxItems": 54, "items": {"type": ["number", "null"]}}
+      }
+    },
+    "snapshotManifestRow": {
+      "allOf": [
+        {"$ref": "#/$defs/artifactBase"},
+        {
+          "if": {"properties": {"f1_target_available": {"const": false}}, "required": ["f1_target_available"]},
+          "then": {"properties": {"future_soh_percent": {"const": null}, "soh_loss_pp_h3": {"const": null}, "h3_endpoint_snapshot_id": {"const": null}, "h3_checkup_index": {"const": null}, "o2_label": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"f1_target_available": {"const": true}}, "required": ["f1_target_available"]},
+          "then": {"properties": {"future_soh_percent": {"type": "number"}, "soh_loss_pp_h3": {"type": "number"}, "h3_endpoint_snapshot_id": {"type": "string"}, "h3_checkup_index": {"type": "integer", "minimum": 0}, "o2_label": {"type": "integer", "minimum": 0, "maximum": 1}}}
+        },
+        {
+          "if": {"properties": {"eligibility_status": {"const": "no_h3_followup"}}, "required": ["eligibility_status"]},
+          "then": {"properties": {"f1_target_available": {"const": false}}}
+        }
+      ], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["snapshot_id", "cell_id", "condition_id", "mode", "checkup_index", "timestamp_s", "q0_ah", "capacity_ah", "soh_percent", "future_soh_percent", "soh_loss_pp_h3", "h3_endpoint_snapshot_id", "h3_checkup_index", "f1_target_available", "eligibility_status", "o2_label", "b_values", "primary_eis_values", "keep_last_eis_values", "acquisition_ids", "finite_acquisition_count_by_feature", "keep_last_acquisition_id", "prediction_available_at_s"],
+      "properties": {
+        "snapshot_id": {"type": "string"}, "cell_id": {"type": "string"}, "condition_id": {"type": "integer", "minimum": 0}, "mode": {"enum": ["calendar", "cyclic", "profile"]},
+        "checkup_index": {"type": "integer", "minimum": 0}, "timestamp_s": {"type": "number"}, "q0_ah": {"type": "number", "exclusiveMinimum": 0}, "capacity_ah": {"type": "number"}, "soh_percent": {"type": "number"},
+        "future_soh_percent": {"type": ["number", "null"]}, "soh_loss_pp_h3": {"type": ["number", "null"]}, "h3_endpoint_snapshot_id": {"type": ["string", "null"]}, "h3_checkup_index": {"type": ["integer", "null"], "minimum": 0},
+        "f1_target_available": {"type": "boolean"}, "eligibility_status": {"enum": ["eligible_f1_and_d_core", "insufficient_history", "no_h3_followup", "missing_eis"]}, "o2_label": {"type": ["integer", "null"], "minimum": 0, "maximum": 1},
+        "b_values": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": ["number", "null"]}},
+        "primary_eis_values": {"type": "array", "minItems": 54, "maxItems": 54, "items": {"type": ["number", "null"]}}, "keep_last_eis_values": {"type": "array", "minItems": 54, "maxItems": 54, "items": {"type": ["number", "null"]}},
+        "acquisition_ids": {"type": "array", "items": {"type": "string"}}, "finite_acquisition_count_by_feature": {"type": "array", "minItems": 54, "maxItems": 54, "items": {"type": "integer", "minimum": 0}}, "keep_last_acquisition_id": {"type": ["string", "null"]}, "prediction_available_at_s": {"type": ["number", "null"]}
+      }
+    },
+    "f1PredictionCommon": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}],
+      "type": "object",
+      "required": ["task_id", "target_kind", "target_name", "snapshot_id", "cell_id", "condition_id", "mode", "acquisition_policy", "view", "model_role", "model_family", "fit_id", "paired_design_sha256", "outer_fold", "outer_validation_weight_mean_one", "observed_soh_loss_pp_h3", "predicted_soh_loss_pp_h3", "current_soh_percent", "observed_future_soh_percent", "predicted_future_soh_percent", "prediction_interval_low_pp", "prediction_interval_high_pp", "prediction_interval_status"],
+      "properties": {
+        "task_id": {"const": "F1_SOH_LOSS_PP_H3"}, "target_kind": {"const": "continuous_regression_primary"}, "target_name": {"const": "soh_loss_pp_h3"},
+        "snapshot_id": {"type": "string"}, "cell_id": {"type": "string"}, "condition_id": {"type": "integer", "minimum": 0}, "mode": {"enum": ["calendar", "cyclic", "profile"]},
+        "acquisition_policy": {"enum": ["primary", "keep_last_sensitivity"]}, "view": {"enum": ["B", "D_CORE"]}, "model_role": {"enum": ["baseline", "fitted_candidate"]},
+        "model_family": {"enum": ["persistence_zero_loss", "recent_slope_h3", "elastic_net_regression", "hist_gradient_boosting_regressor"]}, "fit_id": {"type": ["string", "null"]},
+        "paired_design_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "outer_fold": {"type": "integer", "minimum": 0}, "outer_validation_weight_mean_one": {"type": "number", "exclusiveMinimum": 0},
+        "observed_soh_loss_pp_h3": {"type": "number"}, "predicted_soh_loss_pp_h3": {"type": "number"}, "current_soh_percent": {"type": "number"}, "observed_future_soh_percent": {"type": "number"}, "predicted_future_soh_percent": {"type": "number"},
+        "prediction_interval_low_pp": {"type": "null"}, "prediction_interval_high_pp": {"type": "null"}, "prediction_interval_status": {"const": "unavailable_not_frozen"}
+      }
+    },
+    "oofPredictionRow": {
+      "oneOf": [
+        {"allOf": [{"$ref": "#/$defs/f1PredictionCommon"}, {"properties": {"model_role": {"const": "baseline"}, "model_family": {"enum": ["persistence_zero_loss", "recent_slope_h3"]}, "fit_id": {"type": "null"}, "view": {"const": "B"}, "acquisition_policy": {"const": "primary"}}}], "unevaluatedProperties": false},
+        {"allOf": [{"$ref": "#/$defs/f1PredictionCommon"}, {"properties": {"model_role": {"const": "fitted_candidate"}, "model_family": {"enum": ["elastic_net_regression", "hist_gradient_boosting_regressor"]}, "fit_id": {"type": "string"}}}], "unevaluatedProperties": false}
+      ]
+    },
+    "weightRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshot_id", "weight_mean_one"],
+      "properties": {"snapshot_id": {"type": "string"}, "weight_mean_one": {"type": "number", "exclusiveMinimum": 0}}
+    },
+    "regressionSupport": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshots", "cells", "conditions", "negative_loss_snapshots", "o2_candidate_events"],
+      "properties": {
+        "snapshots": {"type": "integer", "minimum": 0}, "cells": {"type": "integer", "minimum": 0},
+        "conditions": {"type": "integer", "minimum": 0}, "negative_loss_snapshots": {"type": "integer", "minimum": 0},
+        "o2_candidate_events": {"type": "integer", "minimum": 0}
+      }
+    },
+    "pairedDesign": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fold_assignment_task_independent", "applies_to_tasks", "b_cohort_snapshot_ids", "d_core_eligible_snapshot_ids", "paired_comparison_subset", "applies_identically_to_acquisition_policies", "ordered_cohort_snapshot_ids", "metric_weights", "folds", "paired_design_sha256"],
+      "properties": {
+        "fold_assignment_task_independent": {"const": true},
+        "applies_to_tasks": {"const": ["F1_SOH_LOSS_PP_H3", "O2_RAPID_LOSS_5PP_H3"]},
+        "b_cohort_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "d_core_eligible_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "paired_comparison_subset": {"const": "d_core_eligible_intersection_only"},
+        "applies_identically_to_acquisition_policies": {"const": ["primary", "keep_last_sensitivity"]},
+        "ordered_cohort_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "metric_weights": {"type": "array", "items": {"$ref": "#/$defs/weightRow"}},
+        "folds": {"type": "array", "items": {"$ref": "#/$defs/pairedDesignFold"}},
+        "paired_design_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "pairedDesignFold": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_fold", "training_weights", "validation_weights", "inner_folds"],
+      "properties": {
+        "outer_fold": {"type": "integer", "minimum": 0},
+        "training_weights": {"type": "array", "items": {"$ref": "#/$defs/weightRow"}},
+        "validation_weights": {"type": "array", "items": {"$ref": "#/$defs/weightRow"}},
+        "inner_folds": {"type": "array", "items": {"$ref": "#/$defs/pairedDesignInnerFold"}}
+      }
+    },
+    "pairedDesignInnerFold": {
+      "type": "object", "additionalProperties": false,
+      "required": ["inner_fold", "training_weights", "validation_weights"],
+      "properties": {
+        "inner_fold": {"type": "integer", "minimum": 0},
+        "training_weights": {"type": "array", "items": {"$ref": "#/$defs/weightRow"}},
+        "validation_weights": {"type": "array", "items": {"$ref": "#/$defs/weightRow"}}
+      }
+    },
+    "foldRegistryRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_fold", "train_snapshot_ids", "validation_snapshot_ids", "inner_folds"],
+      "properties": {
+        "outer_fold": {"type": "integer", "minimum": 0},
+        "train_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "validation_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "inner_folds": {"type": "array", "items": {"$ref": "#/$defs/foldRegistryInnerRow"}}
+      }
+    },
+    "foldRegistryInnerRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["train_snapshot_ids", "validation_snapshot_ids"],
+      "properties": {
+        "train_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "validation_snapshot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "foldRegistryArtifact": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["split_policy", "task_independent", "applies_to_tasks", "support", "preprocessing_by_mode", "paired_design_by_mode", "modes"],
+      "properties": {
+        "split_policy": {"const": "condition_grouped_outer3_inner2_f1_v2"}, "task_independent": {"const": true},
+        "applies_to_tasks": {"const": ["F1_SOH_LOSS_PP_H3", "O2_RAPID_LOSS_5PP_H3"]},
+        "support": {"type": "object", "additionalProperties": {"$ref": "#/$defs/modeSupport"}},
+        "preprocessing_by_mode": {"type": "object", "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/preprocessingAuditRow"}}},
+        "paired_design_by_mode": {"type": "object", "additionalProperties": {"$ref": "#/$defs/pairedDesign"}},
+        "modes": {"type": "object", "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/foldRegistryRow"}}}
+      }
+    },
+    "preprocessingAuditRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_fold", "acquisition_policy", "view", "model_family", "retained_eis_feature_names", "missing_indicator_names", "imputation_provenance_sha256", "scaling_provenance_sha256"],
+      "properties": {
+        "outer_fold": {"type": "integer", "minimum": 0, "maximum": 2},
+        "acquisition_policy": {"enum": ["primary", "keep_last_sensitivity"]},
+        "view": {"enum": ["B", "D_CORE"]},
+        "model_family": {"enum": ["elastic_net_regression", "hist_gradient_boosting_regressor"]},
+        "retained_eis_feature_names": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "missing_indicator_names": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "imputation_provenance_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "scaling_provenance_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "modeSupport": {
+      "type": "object", "additionalProperties": false,
+      "required": ["overall", "folds"],
+      "properties": {
+        "overall": {"$ref": "#/$defs/regressionSupport"},
+        "folds": {"type": "array", "items": {"$ref": "#/$defs/modeSupportFold"}}
+      }
+    },
+    "modeSupportFold": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_fold", "validation", "inner_validation"],
+      "properties": {
+        "outer_fold": {"type": "integer", "minimum": 0}, "validation": {"$ref": "#/$defs/regressionSupport"},
+        "inner_validation": {"type": "array", "items": {"$ref": "#/$defs/regressionInnerSupport"}}
+      }
+    },
+    "regressionInnerSupport": {
+      "type": "object", "additionalProperties": false,
+      "required": ["inner_fold", "snapshots", "cells", "conditions", "negative_loss_snapshots", "o2_candidate_events"],
+      "properties": {
+        "inner_fold": {"type": "integer", "minimum": 0},
+        "snapshots": {"type": "integer", "minimum": 0}, "cells": {"type": "integer", "minimum": 0},
+        "conditions": {"type": "integer", "minimum": 0}, "negative_loss_snapshots": {"type": "integer", "minimum": 0},
+        "o2_candidate_events": {"type": "integer", "minimum": 0}
+      }
+    },
+    "f1MetricPacket": {
+      "type": "object", "additionalProperties": false,
+      "required": ["metric_id", "condition_balanced_mae_pp_v1", "condition_balanced_median_ae_pp_v1", "condition_balanced_rmse_pp_v1", "condition_balanced_signed_bias_pp_v1", "condition_balanced_r2_v1", "r2_role", "snapshots", "cells", "conditions", "negative_loss_snapshots"],
+      "properties": {
+        "metric_id": {"const": "condition_balanced_mae_pp_v1"},
+        "condition_balanced_mae_pp_v1": {"type": "number", "minimum": 0}, "condition_balanced_median_ae_pp_v1": {"type": "number", "minimum": 0},
+        "condition_balanced_rmse_pp_v1": {"type": "number", "minimum": 0}, "condition_balanced_signed_bias_pp_v1": {"type": "number"},
+        "condition_balanced_r2_v1": {"type": ["number", "null"]}, "r2_role": {"const": "secondary_only"},
+        "snapshots": {"type": "integer", "minimum": 1}, "cells": {"type": "integer", "minimum": 1}, "conditions": {"type": "integer", "minimum": 1},
+        "negative_loss_snapshots": {"type": "integer", "minimum": 0}
+      }
+    },
+    "f1MetricRow": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["task_id", "target_kind", "target_name", "mode", "acquisition_policy", "view", "model_role", "model_family", "paired_design_sha256", "metrics"],
+      "properties": {
+        "task_id": {"const": "F1_SOH_LOSS_PP_H3"}, "target_kind": {"const": "continuous_regression_primary"}, "target_name": {"const": "soh_loss_pp_h3"},
+        "mode": {"enum": ["calendar", "cyclic", "profile"]}, "acquisition_policy": {"enum": ["primary", "keep_last_sensitivity"]}, "view": {"enum": ["B", "D_CORE"]},
+        "model_role": {"enum": ["baseline", "fitted_candidate"]}, "model_family": {"enum": ["persistence_zero_loss", "recent_slope_h3", "elastic_net_regression", "hist_gradient_boosting_regressor"]},
+        "paired_design_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "metrics": {"$ref": "#/$defs/f1MetricPacket"}
+      }
+    },
+    "pairedDeltaRow": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["task_id", "target_kind", "target_name", "mode", "model_family", "acquisition_policy", "same_snapshot_ids_and_weights", "mae_delta_d_core_minus_b_pp", "median_ae_delta_d_core_minus_b_pp", "rmse_delta_d_core_minus_b_pp", "signed_bias_delta_d_core_minus_b_pp", "r2_delta_d_core_minus_b", "bootstrap", "comparison_role"],
+      "properties": {
+        "task_id": {"const": "F1_SOH_LOSS_PP_H3"}, "target_kind": {"const": "continuous_regression_primary"}, "target_name": {"const": "soh_loss_pp_h3"},
+        "mode": {"enum": ["calendar", "cyclic", "profile"]}, "model_family": {"enum": ["elastic_net_regression", "hist_gradient_boosting_regressor"]},
+        "acquisition_policy": {"enum": ["primary", "keep_last_sensitivity"]}, "same_snapshot_ids_and_weights": {"const": true},
+        "mae_delta_d_core_minus_b_pp": {"type": "number"}, "median_ae_delta_d_core_minus_b_pp": {"type": "number"}, "rmse_delta_d_core_minus_b_pp": {"type": "number"},
+        "signed_bias_delta_d_core_minus_b_pp": {"type": "number"}, "r2_delta_d_core_minus_b": {"type": ["number", "null"]},
+        "bootstrap": {"$ref": "#/$defs/regressionBootstrap"},
+        "comparison_role": {"const": "paired_diagnostic_only_never_promotion"}
+      }
+    },
+    "regressionBootstrap": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "draws", "valid_draws", "minimum_valid_draws", "seed", "interval_percent", "interval_valid", "mae_delta_percentile_95", "rmse_delta_percentile_95"],
+      "properties": {
+        "method": {"const": "whole_condition_paired_bootstrap_v1"}, "draws": {"const": 2000},
+        "valid_draws": {"type": "integer", "minimum": 1900, "maximum": 2000}, "minimum_valid_draws": {"const": 1900},
+        "seed": {"const": 20260801}, "interval_percent": {"const": 95}, "interval_valid": {"const": true},
+        "mae_delta_percentile_95": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+        "rmse_delta_percentile_95": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}
+      }
+    },
+    "retrySensitivityRow": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["task_id", "target_kind", "target_name", "mode", "model_family", "primary_policy", "sensitivity_policy", "mae_delta_sign_reversal", "mae_delta_absolute_change_pp", "prohibit_eis_increment_conclusion", "decision_role"],
+      "properties": {
+        "task_id": {"const": "F1_SOH_LOSS_PP_H3"}, "target_kind": {"const": "continuous_regression_primary"}, "target_name": {"const": "soh_loss_pp_h3"},
+        "mode": {"enum": ["calendar", "cyclic", "profile"]}, "model_family": {"enum": ["elastic_net_regression", "hist_gradient_boosting_regressor"]},
+        "primary_policy": {"const": "equal_finite_mean_per_frequency_v1"}, "sensitivity_policy": {"const": "keep_last_acquisition_v1"},
+        "mae_delta_sign_reversal": {"type": "boolean"}, "mae_delta_absolute_change_pp": {"type": "number", "minimum": 0},
+        "prohibit_eis_increment_conclusion": {"type": "boolean"}, "decision_role": {"const": "diagnostic_stop_only_never_promotion"}
+      }
+    },
+    "pairedDeltasArtifact": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object", "required": ["paired_deltas"],
+      "properties": {"paired_deltas": {"type": "array", "items": {"$ref": "#/$defs/pairedDeltaRow"}}}
+    },
+    "retrySensitivityArtifact": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object", "required": ["results"],
+      "properties": {"results": {"type": "array", "items": {"$ref": "#/$defs/retrySensitivityRow"}}}
+    },
+    "archiveIdentity": {
+      "type": "object", "additionalProperties": false, "required": ["path_name", "sha256"],
+      "properties": {"path_name": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+    },
+    "targetRegistryF1": {
+      "type": "object", "additionalProperties": false,
+      "required": ["task_id", "target_kind", "target_name", "unit", "status", "training_authorized", "display_authorized", "selection_role", "synthetic_capability_exercised", "planned_fits", "completed_fits", "prediction_rows"],
+      "properties": {
+        "task_id": {"const": "F1_SOH_LOSS_PP_H3"}, "target_kind": {"const": "continuous_regression_primary"},
+        "target_name": {"const": "soh_loss_pp_h3"}, "unit": {"const": "percentage_points"},
+        "status": {"enum": ["synthetic_capability_only_wave_a_no_go", "development_oof_only_eis_go_with_explicit_limitations"]},
+        "training_authorized": {"type": "boolean"}, "display_authorized": {"const": false}, "selection_role": {"const": "none"},
+        "synthetic_capability_exercised": {"type": "boolean"},
+        "planned_fits": {"type": "integer", "minimum": 0}, "completed_fits": {"type": "integer", "minimum": 0}, "prediction_rows": {"type": "integer", "minimum": 0}
+      }
+    },
+    "targetRegistryO2": {
+      "type": "object", "additionalProperties": false,
+      "required": ["task_id", "target_kind", "target_name", "unit", "status", "training_authorized", "display_authorized", "selection_role", "synthetic_capability_exercised", "planned_fits", "completed_fits", "prediction_rows"],
+      "properties": {
+        "task_id": {"const": "O2_RAPID_LOSS_5PP_H3"}, "target_kind": {"const": "binary_probability_secondary_candidate"},
+        "target_name": {"const": "rapid_loss_ge_5pp_h3"}, "unit": {"const": "probability"},
+        "status": {"const": "blocked_pending_noise_support_utility_review"},
+        "training_authorized": {"const": false}, "display_authorized": {"const": false}, "selection_role": {"const": "none"},
+        "synthetic_capability_exercised": {"const": false}, "planned_fits": {"const": 0}, "completed_fits": {"const": 0}, "prediction_rows": {"const": 0}
+      }
+    },
+    "materializationSummary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["counts", "eligible_acquisitions", "within_60h_candidate_count", "policy"],
+      "properties": {
+        "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "eligible_acquisitions": {"type": "integer", "minimum": 0}, "within_60h_candidate_count": {"type": "integer", "minimum": 0},
+        "policy": {"type": "object", "additionalProperties": false, "required": ["primary", "sensitivity", "retry_window_seconds", "retry_window_role", "timestamp_semantics_provisional"], "properties": {
+          "primary": {"const": "equal_finite_mean_per_frequency_v1"}, "sensitivity": {"const": "keep_last_acquisition_v1"},
+          "retry_window_seconds": {"const": 216000.0}, "retry_window_role": {"const": "flag_only_never_group_or_drop"}, "timestamp_semantics_provisional": {"const": true}
+        }}
+      }
+    },
+    "engineSummaryArtifact": {
+      "allOf": [{"$ref": "#/$defs/artifactBase"}], "unevaluatedProperties": false,
+      "type": "object",
+      "required": ["run_kind", "source_archives", "source_counts", "materialization", "snapshot_count", "target_registry", "target_counts", "planned_fits", "completed_fits", "fit_counts_by_task", "candidate_role", "metrics", "comparison_policy", "o2_results", "config_sha256", "artifact_schema_sha256", "artifact_paths"],
+      "properties": {
+        "run_kind": {"const": "KIT_F1_O2_DEVELOPMENT_V2"},
+        "source_archives": {"type": "object", "additionalProperties": false, "required": ["eoc", "eis"], "properties": {"eoc": {"$ref": "#/$defs/archiveIdentity"}, "eis": {"$ref": "#/$defs/archiveIdentity"}}},
+        "source_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "materialization": {"$ref": "#/$defs/materializationSummary"}, "snapshot_count": {"type": "integer", "minimum": 0},
+        "target_registry": {"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": [{"$ref": "#/$defs/targetRegistryF1"}, {"$ref": "#/$defs/targetRegistryO2"}], "items": false},
+        "target_counts": {"type": "object", "additionalProperties": false, "required": ["snapshot_status", "f1_exact_h3_available", "o2_candidate_events_observed", "o2_prediction_rows"], "properties": {
+          "snapshot_status": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+          "f1_exact_h3_available": {"type": "integer", "minimum": 0}, "o2_candidate_events_observed": {"type": "integer", "minimum": 0}, "o2_prediction_rows": {"const": 0}
+        }},
+        "planned_fits": {"type": "integer", "minimum": 0}, "completed_fits": {"type": "integer", "minimum": 0},
+        "fit_counts_by_task": {"type": "object", "additionalProperties": false, "required": ["F1_SOH_LOSS_PP_H3", "O2_RAPID_LOSS_5PP_H3"], "properties": {
+          "F1_SOH_LOSS_PP_H3": {"$ref": "#/$defs/fitCount"}, "O2_RAPID_LOSS_5PP_H3": {"type": "object", "additionalProperties": false, "required": ["planned", "completed"], "properties": {"planned": {"const": 0}, "completed": {"const": 0}}}
+        }},
+        "candidate_role": {"enum": ["fixed_capability_only_no_selection", "fixed_development_oof_only_no_selection"]},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/f1MetricRow"}},
+        "comparison_policy": {"const": "report_each_fixed_family_without_ranking_or_promotion"}, "o2_results": {"const": []},
+        "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "artifact_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "artifact_paths": {"const": ["acquisition_manifest.jsonl", "snapshot_manifest.jsonl", "fold_registry.json", "oof_predictions.jsonl", "paired_deltas.json", "retry_sensitivity.json", "engine_summary.json"]}
+      }
+    },
+    "fitCount": {
+      "type": "object", "additionalProperties": false, "required": ["planned", "completed"],
+      "properties": {"planned": {"type": "integer", "minimum": 0}, "completed": {"type": "integer", "minimum": 0}}
+    }
+  }
+}

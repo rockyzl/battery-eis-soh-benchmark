@@ -11,7 +11,7 @@ Verified: 2026-08-01
 - Associated article: <https://doi.org/10.1038/s41467-020-15235-7>
 
 The article reports 12 commercial 45 mAh LCO/graphite coin cells, cycling at 25, 35 and 45 °C, and EIS
-at nine stages. Version 1 uses state V only: a 15-minute rest after full charge.
+at nine stages. The current v2 protocol uses state V only: a 15-minute rest after full charge.
 
 ## Official files
 
@@ -34,8 +34,9 @@ excluded from Git. The source data are not relicensed as project code.
 - EIS cycle `k` is paired with capacity diagnostic cycle `k-1`. This ordering was confirmed against
   the first published model-input/target pair: `25C01` state-V EIS cycle 1 maps to capacity cycle 0
   (`37.20271 mAh`), not capacity cycle 1;
-- SoH is discharge capacity divided by the `cycle=0` discharge capacity for the same cell. State-V EIS
-  starts at `cycle=1`, so using the first joined row as the reference would silently alter the target;
+- SoH is discharge capacity divided by `Q0`, defined as the maximum cumulative endpoint among
+  `ox/red == 0` rows at source cycle 0 for the same cell. State-V EIS starts at `cycle=1`, so using the
+  first joined row or a later lifetime maximum as the reference would silently alter the target;
 - some EIS cycles have no matching capacity cycle because several capacity files end earlier. These
   rows are excluded and counted by the audit rather than imputed.
 
@@ -45,7 +46,7 @@ alignment correction, doubling the first 80%-threshold EIS index gives approxima
 is a consistency check, not a frozen RUL label rule.
 
 The original authors' packaged modeling arrays also appear to swap the capacity target sequences for
-`25C02` and `25C03`, and use truncated row ranges. Version 1 therefore defines a clean benchmark from
+`25C02` and `25C03`, and use truncated row ranges. This project therefore defines a clean benchmark from
 the Zenodo files and their file-level cell identities; it is not presented as a byte-for-byte replay
 of those packaged arrays. See [`source-anomalies.md`](source-anomalies.md).
 

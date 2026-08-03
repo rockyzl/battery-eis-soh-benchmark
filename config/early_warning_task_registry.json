@@ -1,0 +1,366 @@
+{
+  "$schema": "./early_warning_task_registry.schema.json",
+  "schema_version": 1,
+  "protocol_lineage": "kit-early-warning-v0",
+  "status": "draft_formal_training_blocked",
+  "source": {
+    "dataset": "KIT comprehensive battery ageing dataset Version 2",
+    "official_record": "https://publikationen.bibliothek.kit.edu/1000169196",
+    "descriptor_doi": "https://doi.org/10.1038/s41597-024-03831-x",
+    "license": "CC BY 4.0",
+    "expected_physical_cells": 228,
+    "expected_condition_groups": 76,
+    "replicates_per_condition": 3,
+    "cell_count_invariant": "expected_condition_groups * replicates_per_condition == expected_physical_cells",
+    "ageing_modes": ["calendar", "cyclic", "profile"]
+  },
+  "snapshot_contract": {
+    "unit": "one physical cell at one completed diagnostic check-up",
+    "timestamp_rule": "completion timestamp of the current diagnostic check-up",
+    "input_time_boundary": "measurement_completion_time <= snapshot_time",
+    "outcome_time_boundary": "measurement_completion_time > snapshot_time",
+    "primary_horizon": {
+      "type": "completed_checkups",
+      "value": 3,
+      "status": "fixed_by_protocol"
+    },
+    "insufficient_followup": "censored_not_negative"
+  },
+  "capacity_contract": {
+    "q0": {
+      "definition": "first valid standardized room-temperature check-up discharge-capacity endpoint",
+      "status": "candidate_pending_source_alignment_review",
+      "provenance_required": true,
+      "required_provenance_fields": [
+        "source_archive",
+        "source_member_or_file",
+        "physical_cell_id",
+        "source_row_locator",
+        "measurement_timestamp",
+        "endpoint_selection_rule",
+        "raw_value",
+        "unit",
+        "source_manifest_hash"
+      ],
+      "missing_provenance_behavior": "snapshot_ineligible_fail_closed",
+      "forbidden": [
+        "lifetime maximum capacity",
+        "any capacity measured after the snapshot",
+        "test-guided denominator selection"
+      ]
+    },
+    "conventional_soh_percent_formula": "100 * current_standardized_checkup_discharge_capacity / Q0",
+    "source_soh_cap_role": "audit_metadata_only",
+    "source_soh_imp_role": "forbidden_as_feature_or_label"
+  },
+  "input_blocks": [
+    {
+      "id": "A",
+      "name": "capacity_history",
+      "required": true,
+      "fields": [
+        "Q0",
+        "current_capacity",
+        "current_conventional_soh_percent",
+        "prior_capacity_or_soh_lags",
+        "past_only_slope_and_curvature",
+        "completed_checkup_count",
+        "elapsed_days",
+        "equivalent_full_cycles"
+      ]
+    },
+    {
+      "id": "B_CONTEXT",
+      "name": "use_and_environment",
+      "required": true,
+      "fields": [
+        "ageing_mode",
+        "temperature",
+        "soc_or_voltage_window",
+        "charge_rate",
+        "discharge_rate",
+        "profile_identity",
+        "elapsed_exposure"
+      ]
+    },
+    {
+      "id": "C_EIS",
+      "name": "current_checkup_eis",
+      "required": false,
+      "primary_view": "valid compensated room-temperature 50-percent-SOC spectrum",
+      "fields": [
+        "real_impedance_by_registered_frequency",
+        "imaginary_impedance_by_registered_frequency",
+        "measurement_temperature",
+        "nominal_soc",
+        "validity_and_quality_flags"
+      ],
+      "prohibited_fields": ["source_soh_imp"]
+    },
+    {
+      "id": "D_AUX",
+      "name": "pulse_temperature_and_quality_history",
+      "required": false,
+      "status": "blocked_pending_source_audit",
+      "fields": [
+        "pulse_resistance_or_relaxation_summaries",
+        "past_only_temperature_summaries",
+        "checkup_quality_and_availability"
+      ]
+    }
+  ],
+  "feature_views": [
+    {
+      "id": "A",
+      "blocks": ["A"],
+      "question": "capacity-trajectory baseline"
+    },
+    {
+      "id": "B",
+      "blocks": ["A", "B_CONTEXT"],
+      "question": "incremental value of operating context"
+    },
+    {
+      "id": "C",
+      "blocks": ["C_EIS", "B_CONTEXT"],
+      "question": "EIS-centric prediction without measured capacity history"
+    },
+    {
+      "id": "D_CORE",
+      "blocks": ["A", "B_CONTEXT", "C_EIS"],
+      "question": "incremental EIS value beyond a strong trajectory baseline"
+    },
+    {
+      "id": "D_FULL",
+      "blocks": ["A", "B_CONTEXT", "C_EIS", "D_AUX"],
+      "question": "incremental pulse, temperature and quality value after capacity and EIS",
+      "missing_optional_block_behavior": "D_FULL unavailable; retain separately named D_CORE; do not silently call a reduced view D_FULL"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1_THRESHOLD_80_H3",
+      "family": "future_threshold_crossing",
+      "type": "binary_event_with_censoring",
+      "eligibility": "snapshot conventional SoH is above threshold",
+      "event": "first observed future conventional SoH at or below threshold at one of exactly the next three completed check-ups",
+      "event_observation": "discrete_completed_checkup_index",
+      "true_crossing_time": "interval_censored_between_last_observed_above_and_first_observed_at_or_below",
+      "threshold_soh_percent": 80.0,
+      "threshold_status": "candidate_pending_development_label_review",
+      "horizon_checkups": 3,
+      "non_event_requirement": "complete horizon follow-up",
+      "primary_metric": "condition_macro_pr_auc",
+      "eligible_feature_views": ["A", "B", "C", "D_CORE", "D_FULL"]
+    },
+    {
+      "id": "O2_RAPID_LOSS_5PP_H3",
+      "family": "rapid_future_degradation",
+      "type": "binary_event_with_censoring",
+      "event": "snapshot conventional SoH minus conventional SoH at the third future completed check-up is at least threshold",
+      "loss_threshold_percentage_points": 5.0,
+      "threshold_status": "candidate_pending_development_noise_and_prevalence_review",
+      "horizon_checkups": 3,
+      "non_event_requirement": "complete horizon follow-up",
+      "primary_metric": "condition_macro_pr_auc",
+      "eligible_feature_views": ["A", "B", "C", "D_CORE", "D_FULL"]
+    },
+    {
+      "id": "O3_PEER_DEVIATION_ONSET_H3",
+      "family": "future_peer_deviation_onset",
+      "type": "binary_event_with_censoring",
+      "event": "new future deviation from leave-target-out same-condition peer trajectory within horizon",
+      "deviation_definition": "to_be_frozen_after_development_only_alignment_and_noise_audit",
+      "status": "exploratory_due_to_two_peer_reference_cells",
+      "horizon_checkups": 3,
+      "primary_feature_policy": "peer-derived features prohibited",
+      "secondary_feature_policy": "same-condition leave-target-out peer features allowed only for declared fleet-monitoring deployment analysis",
+      "label_side_peer_role": "allowed with held-out peer lineage and no feedback into fitting",
+      "primary_metric": "condition_macro_pr_auc",
+      "eligible_feature_views": ["A", "B", "C", "D_CORE", "D_FULL"]
+    },
+    {
+      "id": "R1_CONDITIONAL_RUL_80",
+      "family": "conditional_remaining_useful_exposure",
+      "type": "interval_or_right_censored_time_to_observed_event",
+      "event": "first observed future conventional SoH at or below threshold at a completed check-up",
+      "event_representation": {
+        "observed_event_index": "first completed check-up at or below threshold",
+        "interval_lower_bound": "last completed check-up observed above threshold",
+        "interval_upper_bound": "first completed check-up observed at or below threshold",
+        "right_censor_bound": "last valid completed check-up when no event is observed",
+        "exact_continuous_crossing_claim": "prohibited"
+      },
+      "threshold_soh_percent": 80.0,
+      "threshold_status": "candidate_pending_development_event_review",
+      "time_scale_by_mode": {
+        "calendar": "elapsed_days",
+        "cyclic": "equivalent_full_cycles",
+        "profile": "equivalent_full_cycles_with_traceable_distance_secondary"
+      },
+      "future_use_assumption": "continuation_of_declared_observed_operating_condition",
+      "interval_and_right_censoring": "required",
+      "primary_metric": "censoring_aware_integrated_brier_score",
+      "eligible_feature_views": ["A", "B", "C", "D_CORE", "D_FULL"]
+    }
+  ],
+  "validation": {
+    "primary": {
+      "name": "unseen_condition_generalization",
+      "outer_group": "condition_id_all_three_replicates",
+      "inner_group": "condition_id",
+      "stratification": ["ageing_mode", "temperature"],
+      "split_construction": "metadata_only_before_protected_outcome_read; condition identities remain grouped",
+      "event_support_use": "prohibited"
+    },
+    "development_nested_folds": {
+      "group": "condition_id_all_three_replicates",
+      "stratification_after_development_label_audit": [
+        "ageing_mode",
+        "temperature",
+        "event_support_if_feasible"
+      ],
+      "protected_outcomes_available": false
+    },
+    "secondary": {
+      "name": "known_condition_held_replicate_transfer",
+      "group": "physical_cell_id",
+      "peer_features": "allowed_only_under_declared_fleet_monitoring_assumption",
+      "primary_unseen_condition_feature_use": "prohibited"
+    },
+    "temporal_rule": "all features at or before snapshot; labels strictly after snapshot",
+    "prohibited_splits": [
+      "random frequency-row split",
+      "random spectrum split",
+      "random checkpoint-row split that mixes a cell across folds"
+    ],
+    "temperature_extrapolation": "secondary_leave_one_temperature_out_robustness_only"
+  },
+  "model_selection": {
+    "binary_candidate_order": [
+      "prevalence_probability",
+      "capacity_slope_rule",
+      "elastic_net_logistic",
+      "constrained_gradient_boosting"
+    ],
+    "survival_candidate_order": [
+      "mode_condition_survival_reference",
+      "regularized_cox",
+      "regularized_aft",
+      "tree_survival_if_independently_eligible"
+    ],
+    "fold_local_operations": [
+      "imputation",
+      "scaling",
+      "constant_and_correlation_screening",
+      "supervised_variable_selection",
+      "hyperparameter_selection",
+      "probability_or_survival_calibration",
+      "action_threshold_selection",
+      "ensemble_weight_selection"
+    ],
+    "simplicity_rule": "select complexity only when paired held-condition improvement exceeds one standard error without material calibration, worst-mode, missed-event or false-alert deterioration",
+    "primary_incremental_contrast": "D_CORE versus B",
+    "valid_feature_view_references": ["A", "B", "C", "D_CORE", "D_FULL"]
+  },
+  "ensemble_gate": {
+    "default": "ineligible",
+    "minimum_complete_same_outcome_base_models": 3,
+    "requirements": [
+      "held-condition error diversity",
+      "inner-fold-only nonnegative weights summing to one",
+      "recalibration without outer or protected outcomes",
+      "paired improvement greater than one standard error",
+      "no material deterioration in worst-mode, missed-event or false-alert metrics"
+    ],
+    "protected_evaluation_may_create_or_rescue_ensemble": false
+  },
+  "metrics": {
+    "binary": [
+      "condition_macro_pr_auc",
+      "roc_auc",
+      "recall_at_frozen_alert_budget",
+      "precision_at_frozen_alert_budget",
+      "missed_event_rate",
+      "false_alerts_per_cell_checkup",
+      "brier_score",
+      "calibration_slope_and_intercept",
+      "event_level_early_warning_lead_time"
+    ],
+    "survival": [
+      "censoring_aware_integrated_brier_score",
+      "concordance",
+      "time_dependent_discrimination",
+      "survival_calibration_at_registered_horizons",
+      "prediction_interval_coverage"
+    ],
+    "uncertainty_unit": "condition_group",
+    "uncensored_rul_mae_role": "descriptive_only"
+  },
+  "action_policy": {
+    "status": "thresholds_blocked_pending_development_only_decision_analysis",
+    "production_defaults_allowed": false,
+    "demo_policy_status": "provisional_demo_only_not_operationally_validated",
+    "human_review_and_acknowledgement_required_for_all_levels": true,
+    "explicit_human_approval_required_for_orange_red_physical_changes": true,
+    "rul_policy_scope": "separate thresholds by ageing mode, exposure unit and declared future-use scenario",
+    "red_eligibility": "observed_registered_capacity_threshold_and_valid_repeat_confirmation",
+    "model_probability_without_observed_confirmed_threshold_max_level": "orange_or_retest",
+    "levels": [
+      {
+        "id": "green",
+        "meaning": "continue normal operation and scheduled monitoring"
+      },
+      {
+        "id": "yellow",
+        "meaning": "shorten check interval or repeat diagnostic; may also represent invalid data"
+      },
+      {
+        "id": "orange",
+        "meaning": "inspect, retest, consider derating, and plan maintenance or replacement; probability alone cannot escalate beyond this level"
+      },
+      {
+        "id": "red",
+        "meaning": "human service or replacement review only after an observed registered capacity threshold is confirmed by a valid repeat measurement"
+      }
+    ],
+    "invalid_data_can_directly_trigger_red": false,
+    "thermal_runaway_interpretation": "prohibited"
+  },
+  "formal_gate_states": {
+    "formal_model_search": "blocked",
+    "protected_evaluation": "blocked",
+    "production_action_policy": "blocked",
+    "publication_claim": "blocked",
+    "resume_claim": "blocked"
+  },
+  "formal_gates": [
+    "source_inventory_and_license_review",
+    "snapshot_q0_exposure_alignment_review",
+    "development_only_outcome_prevalence_threshold_and_censoring_review",
+    "protocol_registry_and_split_hash_freeze",
+    "leakage_and_protected_evaluator_review",
+    "bounded_real_backend_smoke_review",
+    "nested_development_selection_review",
+    "independent_oof_metric_calibration_and_policy_review",
+    "winner_calibration_and_action_threshold_freeze",
+    "separate_protected_evaluation_authorization",
+    "independent_result_and_reproducibility_review",
+    "separate_publication_and_resume_claim_review"
+  ],
+  "claim_boundary": {
+    "supported": [
+      "capacity degradation risk",
+      "capacity-threshold crossing under a declared horizon",
+      "conditional remaining useful exposure",
+      "peer-trajectory deviation with stated limitations",
+      "human-reviewed maintenance decision support"
+    ],
+    "unsupported": [
+      "thermal runaway prediction",
+      "sudden catastrophic field failure prediction",
+      "unconditional RUL across arbitrary future use",
+      "autonomous replacement or safety-critical control"
+    ]
+  }
+}

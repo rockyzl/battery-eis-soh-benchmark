@@ -16,6 +16,13 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from .dataset import BatteryDataset
+from .tasks import (
+    design_matrix,
+    load_task_registry,
+    prediction_outputs,
+    soh_fraction,
+    target_values,
+)
 
 PAPER_TRAIN_CELLS = {"25C01", "25C02", "25C03", "25C04"}
 PAPER_TEST_CELLS = {"25C05", "25C06", "25C07", "25C08"}
@@ -35,7 +42,7 @@ class MeanRegressor:
 def build_model(name: str, n_samples: int, n_features: int) -> RegressorMixin | MeanRegressor:
     if name == "mean":
         return MeanRegressor()
-    if name in {"cycle", "ridge"}:
+    if name == "ridge":
         return make_pipeline(StandardScaler(), Ridge(alpha=1.0))
     if name == "pls":
         components = min(10, n_features, n_samples - 1)
@@ -55,13 +62,14 @@ def through_eol_mask(
     dataset: BatteryDataset, threshold: float = EOL_SOH_THRESHOLD
 ) -> NDArray[np.bool_]:
     """Keep each cell through its first observation at or below the EOL threshold."""
-    mask = np.ones(dataset.y.shape[0], dtype=np.bool_)
+    observed_soh = soh_fraction(dataset)
+    mask = np.ones(observed_soh.shape[0], dtype=np.bool_)
     for cell in dataset.audit.cells:
         indices = np.flatnonzero(dataset.cells == cell)
         if not len(indices):
             continue
         ordered = indices[np.argsort(dataset.cycles[indices])]
-        crossings = ordered[dataset.y[ordered] <= threshold]
+        crossings = ordered[observed_soh[ordered] <= threshold]
         if len(crossings):
             mask[ordered[dataset.cycles[ordered] > dataset.cycles[crossings[0]]]] = False
     return mask
@@ -125,57 +133,86 @@ def evaluate_paper_split(
     model_names: list[str],
     output_dir: Path,
     project_root: Path,
+    *,
+    task_id: str = "T0",
+    row_scope: str = "all_valid",
 ) -> EvaluationResult:
     available = set(dataset.cells.tolist())
     missing = (PAPER_TRAIN_CELLS | PAPER_TEST_CELLS) - available
     if missing:
         raise ValueError(f"paper split cells missing: {sorted(missing)}")
-    eligible = through_eol_mask(dataset)
-    train_mask = eligible & np.isin(dataset.cells, sorted(PAPER_TRAIN_CELLS))
-    test_mask = eligible & np.isin(dataset.cells, sorted(PAPER_TEST_CELLS))
+    task_registry_path = project_root / "config/target_registry.json"
+    registry = load_task_registry(task_registry_path)
+    if task_id not in registry:
+        raise ValueError(f"unregistered task ID: {task_id}")
+    task = registry[task_id]
+    if not model_names:
+        raise ValueError("model list must not be empty")
+    if len(model_names) != len(set(model_names)):
+        raise ValueError("model list contains duplicates")
+    invalid_models = sorted(set(model_names) - set(task.allowed_smoke_models))
+    if invalid_models:
+        raise ValueError(f"models not allowed for task {task_id}: {invalid_models}")
+    if row_scope not in {"all_valid", "through_eol"}:
+        raise ValueError(f"unsupported row scope: {row_scope}")
+    train_mask = np.isin(dataset.cells, sorted(PAPER_TRAIN_CELLS))
+    test_mask = np.isin(dataset.cells, sorted(PAPER_TEST_CELLS))
+    if row_scope == "through_eol":
+        test_mask &= through_eol_mask(dataset)
     if set(dataset.cells[train_mask]) & set(dataset.cells[test_mask]):
         raise AssertionError("cell leakage across train and test")
 
     output_dir.mkdir(parents=True, exist_ok=False)
-    prediction_lines = ["model,cell,cycle,capacity_true_mah,capacity_pred_mah,soh_true,soh_pred"]
+    prediction_lines = [
+        (
+            "model,cell,cycle,initial_capacity_mah,capacity_true_mah,capacity_pred_mah,"
+            "soh_true_percent,soh_pred_percent"
+        )
+    ]
     all_metrics: dict[str, dict[str, object]] = {}
+    observed_soh_percent = 100.0 * soh_fraction(dataset)
+    target_all = target_values(dataset, task.target)
+    feature_view = "eis" if task.features == "none" else task.features
+    features = design_matrix(dataset, feature_view)
     for name in model_names:
-        if name == "cycle":
-            train_features = dataset.cycles[train_mask].reshape(-1, 1).astype(np.float64)
-            test_features = dataset.cycles[test_mask].reshape(-1, 1).astype(np.float64)
-        else:
-            train_features = dataset.X[train_mask]
-            test_features = dataset.X[test_mask]
+        train_features = features[train_mask]
+        test_features = features[test_mask]
         model = build_model(name, int(train_mask.sum()), train_features.shape[1])
-        model.fit(train_features, dataset.capacities_mah[train_mask])
-        capacity_prediction = np.asarray(model.predict(test_features)).reshape(-1)
-        soh_prediction = capacity_prediction / dataset.initial_capacities_mah[test_mask]
-        if not np.all(np.isfinite(capacity_prediction)) or not np.all(np.isfinite(soh_prediction)):
-            raise ValueError(f"non-finite predictions from {name}")
+        model.fit(train_features, target_all[train_mask])
+        raw_prediction = np.asarray(model.predict(test_features)).reshape(-1)
+        capacity_prediction, soh_prediction_percent = prediction_outputs(
+            raw_prediction, task.target, dataset.initial_capacities_mah[test_mask]
+        )
+        soh_true_percent = observed_soh_percent[test_mask]
         per_cell: dict[str, dict[str, float | None]] = {}
         for cell in sorted(PAPER_TEST_CELLS):
             cell_mask = test_mask & (dataset.cells == cell)
             prediction_cell_mask = dataset.cells[test_mask] == cell
-            per_cell[cell] = _metrics(dataset.y[cell_mask], soh_prediction[prediction_cell_mask])
+            per_cell[cell] = _metrics(
+                observed_soh_percent[cell_mask], soh_prediction_percent[prediction_cell_mask]
+            )
         macro_mae = float(np.mean([item["mae"] for item in per_cell.values()]))
         macro_rmse = float(np.mean([item["rmse"] for item in per_cell.values()]))
         all_metrics[name] = {
             "capacity_pooled_mah": _metrics(dataset.capacities_mah[test_mask], capacity_prediction),
-            "soh_pooled": _metrics(dataset.y[test_mask], soh_prediction),
-            "cell_macro_mae": macro_mae,
-            "cell_macro_rmse": macro_rmse,
+            "soh_percent_pooled": _metrics(soh_true_percent, soh_prediction_percent),
+            "cell_macro_mae_percentage_points": macro_mae,
+            "cell_macro_rmse_percentage_points": macro_rmse,
             "per_cell": per_cell,
+            "task_id": task.task_id,
+            "feature_view": task.features,
         }
-        for cell, cycle, capacity_true, capacity_pred, soh_true, soh_pred in zip(
+        for cell, cycle, q0, capacity_true, capacity_pred, soh_true, soh_pred in zip(
             dataset.cells[test_mask],
             dataset.cycles[test_mask],
+            dataset.initial_capacities_mah[test_mask],
             dataset.capacities_mah[test_mask],
             capacity_prediction,
-            dataset.y[test_mask],
-            soh_prediction,
+            soh_true_percent,
+            soh_prediction_percent,
         ):
             prediction_lines.append(
-                f"{name},{cell},{cycle},{capacity_true:.12g},{capacity_pred:.12g},"
+                f"{name},{cell},{cycle},{q0:.12g},{capacity_true:.12g},{capacity_pred:.12g},"
                 f"{soh_true:.12g},{soh_pred:.12g}"
             )
 
@@ -188,14 +225,22 @@ def evaluate_paper_split(
     manifest = {
         "schema_version": 1,
         "scientific_result": False,
+        "publication_ready": False,
         "resume_approved": False,
+        "formal_training_eligible": False,
+        "fixed_test_labels_loaded": True,
         "purpose": "engineering_smoke",
-        "model_target": "absolute_discharge_capacity_mah",
-        "reported_health_metric": "capacity_prediction / known_cycle_0_capacity",
+        "protocol_lineage": "v2_engineering_smoke",
+        "task_id": task.task_id,
+        "model_target": task.target,
+        "feature_view": task.features,
+        "primary_reported_metric": "cell_macro_soh_mae_percentage_points",
+        "prediction_clipping": "none",
         "split": {
             "train_cells": sorted(PAPER_TRAIN_CELLS),
             "test_cells": sorted(PAPER_TEST_CELLS),
-            "through_first_soh_at_or_below": EOL_SOH_THRESHOLD,
+            "row_scope": row_scope,
+            "eol_sensitivity_threshold": EOL_SOH_THRESHOLD,
         },
         "models": model_names,
         "rows": {"train": int(train_mask.sum()), "test": int(test_mask.sum())},
@@ -206,7 +251,8 @@ def evaluate_paper_split(
             "source_manifest_sha256": _sha256_if_present(
                 project_root / "data/source_manifest.json"
             ),
-            "protocol_sha256": _sha256_if_present(project_root / "docs/protocol-v1.md"),
+            "protocol_sha256": _sha256_if_present(project_root / "docs/protocol-v2.md"),
+            "target_registry_sha256": _sha256(task_registry_path),
             "lockfile_sha256": _sha256_if_present(project_root / "uv.lock"),
         },
         "git": _git_identity(project_root),

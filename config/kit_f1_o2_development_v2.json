@@ -1,0 +1,182 @@
+{
+  "$schema": "./kit_f1_o2_development_v2.schema.json",
+  "config_id": "kit_f1_o2_development_v2",
+  "preparation_revision": "paired_eis_go_20260802_v1",
+  "supersedes_config_sha256": "b2c5b7a12d0588e42143c97eddabf74299e98e536edb689969be15f55efad88d",
+  "artifact_schema_version": "kit_f1_o2_dev_v2",
+  "artifact_schema_sha256": "1948b8d4599e38d4151b14c4ac65647f9931eccd8a81837affdeb9abea447c09",
+  "artifact_paths": [
+    "acquisition_manifest.jsonl",
+    "snapshot_manifest.jsonl",
+    "fold_registry.json",
+    "oof_predictions.jsonl",
+    "paired_deltas.json",
+    "retry_sensitivity.json",
+    "engine_summary.json"
+  ],
+  "development_only": true,
+  "seed": 20260801,
+  "readiness": {
+    "wave_a_target_data_go": true,
+    "f1_training_authorized": true,
+    "timestamp_semantics_verified": false,
+    "checkup_completion_semantics_verified": true,
+    "eis_alignment_decision": "GO_FOR_MINIMAL_PAIRED_DEVELOPMENT_RUN_WITH_EXPLICIT_LIMITATIONS",
+    "eis_readiness_artifact_path": "../artifacts/audits/kit-d-core-eis-readiness.json",
+    "eis_readiness_artifact_sha256": "b1c193ed7a6a27615af20018ecdb8df8ce62eacb6336eebf21740ccde08594b0",
+    "expected_paired_snapshots": 2919,
+    "paired_cohort_identity_sha256": "8a84dfb3d7239ee8b8972690f162d404f93733c19316e9b0bf9e4e3a8b20565d",
+    "paired_design_sha256_by_mode": {
+      "calendar": "ddabf2f4fb7a11acec4eb2b777944f9cc0cf2b0deb71d4945a772556c80d92d9",
+      "cyclic": "8c9fc0fae4022b5ac5c56caf432647607ae01e4e2d7a727e9cfbb20e2c61a244",
+      "profile": "a9983357be490a92503daefcab7ae69b7fc6357cfe501a2fb6737a08e4be3286"
+    },
+    "planned_trial_keys_sha256": "d17a10007c6228cae0723f71fd5059f22fa3254fdf9ab183cad618834712eb96",
+    "expected_eis_frequencies": 27,
+    "expected_eis_values": 54
+  },
+  "source": {
+    "eoc_sha256": "95de03af7d73efdeed97fcd13fbdca2eeabe85b2971b08394b665c8639b3e140",
+    "eoc_size_bytes": 93167507,
+    "eis_sha256": "bc1c56e05f50a41ed9d9f752f65fc7833b49ad6bc369f67ccfc14288a9815fed",
+    "eis_size_bytes": 19894633,
+    "expected_real_cells": 228,
+    "expected_capacity_endpoints": 3999,
+    "expected_valid_rt50_spectra": 3993
+  },
+  "targets": {
+    "f1": {
+      "task_id": "F1_SOH_LOSS_PP_H3",
+      "kind": "continuous_regression_primary",
+      "name": "soh_loss_pp_h3",
+      "horizon_checkups": 3,
+      "sign": "current_soh_minus_future_soh_positive_means_loss",
+      "negative_values": "preserve_without_clipping",
+      "derived_future_soh": "current_soh_minus_predicted_soh_loss_pp_h3",
+      "prediction_interval": "unavailable_not_frozen"
+    },
+    "o2": {
+      "task_id": "O2_RAPID_LOSS_5PP_H3",
+      "kind": "binary_probability_secondary_candidate",
+      "name": "rapid_loss_ge_5pp_h3",
+      "loss_threshold_percentage_points": 5.0,
+      "training_authorized": false,
+      "display_authorized": false,
+      "selection_role": "none"
+    }
+  },
+  "acquisitions": {
+    "eligibility": "source_valid_charged_rt50",
+    "primary_policy": "equal_finite_mean_per_frequency_v1",
+    "sensitivity_policy": "keep_last_acquisition_v1",
+    "keep_last_tie_key": [
+      "timestamp_s",
+      "sd_block_id",
+      "source_member",
+      "source_line",
+      "acquisition_id"
+    ],
+    "retry_window_seconds": 216000,
+    "retry_window_role": "flag_only_never_group_or_drop"
+  },
+  "weights": {
+    "policy": "equal_condition_then_cell_then_checkup_v1",
+    "fit_normalization": "mean_one",
+    "metric_normalization": "mean_one"
+  },
+  "validation": {
+    "outer_group_folds": 3,
+    "inner_group_folds": 2,
+    "group": "complete_experimental_condition",
+    "minimum_conditions_per_mode": 3,
+    "minimum_conditions_per_validation_fold": 1
+  },
+  "models": {
+    "baselines": {
+      "persistence_zero_loss": {"prediction": 0.0},
+      "recent_slope_h3": {"intervals": 3}
+    },
+    "elastic_net_regression": {
+      "alpha": 0.01,
+      "l1_ratio": 0.1,
+      "fit_intercept": true,
+      "max_iter": 250000,
+      "tol": 0.00001,
+      "selection": "cyclic",
+      "random_state": 20260801
+    },
+    "hist_gradient_boosting_regressor": {
+      "loss": "squared_error",
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 7,
+      "max_iter": 100,
+      "min_samples_leaf": 20,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "random_state": 20260801
+    },
+    "o2_capability": {
+      "training_authorized": false,
+      "logistic_elastic_net": {
+        "C": 1.0,
+        "l1_ratio": 0.5,
+        "solver": "saga",
+        "max_iter": 500,
+        "tol": 0.0001,
+        "class_weight": null,
+        "random_state": 20260801
+      },
+      "hist_gradient_boosting": {
+        "learning_rate": 0.05,
+        "max_leaf_nodes": 7,
+        "max_iter": 10,
+        "min_samples_leaf": 20,
+        "l2_regularization": 1.0,
+        "early_stopping": false,
+        "class_weight": null,
+        "random_state": 20260801
+      },
+      "calibration": {
+        "method": "weighted_platt_sigmoid_v1",
+        "maximum_iterations": 200,
+        "probability_clip": 0.000001
+      }
+    }
+  },
+  "metrics": {
+    "f1_primary": "condition_balanced_mae_pp_v1",
+    "f1_secondary": [
+      "condition_balanced_median_ae_pp_v1",
+      "condition_balanced_rmse_pp_v1",
+      "condition_balanced_signed_bias_pp_v1",
+      "condition_balanced_r2_v1"
+    ],
+    "o2": [
+      "condition_balanced_pooled_pr_auc_v1",
+      "condition_balanced_pooled_brier_v1"
+    ],
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 20260801,
+    "bootstrap_interval_percent": 95,
+    "minimum_valid_bootstrap_draws": 1900
+  },
+  "resources": {
+    "soft_drain_seconds": 420,
+    "hard_stop_seconds": 480,
+    "heartbeat_max_interval_seconds": 15,
+    "heartbeat_stale_seconds": 30,
+    "soft_rss_bytes": 1717986918,
+    "hard_rss_bytes": 2147483648,
+    "threadpool_limit": 1
+  },
+  "authorization": {
+    "scientific_result": false,
+    "publication_ready": false,
+    "resume_approved": false,
+    "formal_model_result": false,
+    "protected_test_result": false,
+    "timestamp_semantics_provisional": true,
+    "retry_semantics_provisional": true,
+    "selection_performed": false
+  }
+}

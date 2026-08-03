@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>KIT 电池未来衰减回放 · Development OOF</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">KIT 电池老化 · 历史回放</p>
+        <h1>提前看三次检查后的容量变化</h1>
+        <p class="lede">让 228 个真实电芯沿历史时间线一起“老化”，再看 180 个可配对电芯中，加入 EIS 后预测有没有变化。</p>
+      </div>
+      <label class="mode-select">
+        展示数据
+        <select id="data-mode" aria-describedby="data-mode-note" data-data-mode="development-oof">
+          <option value="development-oof">KIT Development OOF · B vs D_CORE</option>
+          <option value="accepted-kit-oof" disabled>Final / protected test · 尚未进行</option>
+        </select>
+      </label>
+    </header>
+
+    <aside class="evidence-banner" aria-live="polite" data-development-label>
+      <strong>DEVELOPMENT OOF — 不是最终模型，也不是生产报警。</strong>
+      <span id="data-mode-note">每个预测来自“完整实验条件留出”的开发集回放；未使用 protected test。</span>
+      <span><code>publication_ready=false</code>；<code>selection_performed=false</code>：这里只比较，不宣布统一冠军或因果关系。</span>
+    </aside>
+
+    <main>
+      <section class="answer-strip" aria-label="十秒钟项目概览">
+        <article>
+          <span>现在做什么？</span>
+          <strong>预测未来 3 次检查的 SoH 损失</strong>
+          <small>目标：SoH<sub>现在</sub> − SoH<sub>未来第3次</sub></small>
+        </article>
+        <article>
+          <span>电芯总数</span>
+          <strong id="overview-roster">228</strong>
+          <small id="overview-coverage">180 个有 paired OOF；48 个不满足当前建模条件</small>
+        </article>
+        <article>
+          <span>历史进度</span>
+          <strong id="overview-time">检查 10 / 28</strong>
+          <small id="overview-exposure">按真实 completed check-up 前进</small>
+        </article>
+        <article class="review-answer">
+          <span>现在先看谁？</span>
+          <strong id="overview-review-cell">正在计算</strong>
+          <small id="overview-review-reason">按模型分歧排序，只用于研究复核</small>
+        </article>
+      </section>
+
+      <section class="model-finding development-panel" aria-labelledby="finding-title">
+        <div>
+          <span class="development-chip" data-development-label>Condition-held-out development OOF</span>
+          <h2 id="finding-title">核心问题：加上 EIS，预测真的更好吗？</h2>
+          <p><b>没有统一答案。</b>误差差值定义为 D_CORE − B：负数表示加入 EIS 后误差下降，正数表示误差上升。下面是同一批 snapshot、fold 和模型家族的配对开发比较，不是因果检验。</p>
+        </div>
+        <div id="mode-scorecards" class="mode-scorecards" aria-label="按老化模式和模型家族比较 B 与 D_CORE"></div>
+      </section>
+
+      <section class="comparison-panel development-panel" aria-labelledby="comparison-title">
+        <div class="panel-heading">
+          <div>
+            <span class="development-chip" data-development-label>Paired EIS increment study · primary policy</span>
+            <h2 id="comparison-title">六组配对结果：EIS 有时帮助，有时变差，有时不确定</h2>
+          </div>
+          <p>MAE / RMSE 单位都是 SoH 百分点；R² 只作辅助指标。</p>
+        </div>
+        <div id="eis-comparison-grid" class="eis-comparison-grid"></div>
+        <details>
+          <summary>为什么不能简单说“EIS 有用”或“EIS 没用”？</summary>
+          <p>不同老化模式和模型家族给出了不同方向。95% 区间跨过 0 时，当前开发证据不足以判断方向；bootstrap 是按完整 condition 重采样，不会把 2,000 次抽样变成 2,000 个新电芯。</p>
+        </details>
+      </section>
+
+      <section class="replay-panel development-panel" aria-labelledby="replay-title">
+        <div class="panel-heading">
+          <div>
+            <span class="development-chip" data-development-label>Development OOF · not final</span>
+            <h2 id="replay-title">把历史记录一步一步放出来</h2>
+          </div>
+          <p id="replay-position" class="position-label"></p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="老化方式">
+          <button id="tab-all" role="tab" aria-selected="true" aria-controls="fleet-panel" data-mode="all">全部 228 个</button>
+          <button id="tab-calendar" role="tab" aria-selected="false" aria-controls="fleet-panel" data-mode="calendar">Calendar · 静置老化</button>
+          <button id="tab-cyclic" role="tab" aria-selected="false" aria-controls="fleet-panel" data-mode="cyclic">Cyclic · 反复充放电</button>
+          <button id="tab-profile" role="tab" aria-selected="false" aria-controls="fleet-panel" data-mode="profile">Driving profile · 驾驶工况</button>
+        </div>
+
+        <div class="playback-controls">
+          <button id="replay-prev" aria-label="上一次检查">← 上一步</button>
+          <button id="replay-play" aria-pressed="false" aria-label="播放历史回放">▶ 播放</button>
+          <button id="replay-next" aria-label="下一次检查">下一步 →</button>
+          <label class="slider-label" for="replay-slider">
+            检查 <output id="checkup-output" for="replay-slider">10</output>
+          </label>
+          <input id="replay-slider" type="range" min="0" max="28" value="10" step="1" />
+          <label>
+            速度
+            <select id="replay-speed">
+              <option value="1200">慢</option>
+              <option value="700" selected>正常</option>
+              <option value="350">快</option>
+            </select>
+          </label>
+          <label>
+            模型家族
+            <select id="model-family">
+              <option value="hgb">HGB</option>
+              <option value="elasticNet">ElasticNet</option>
+            </select>
+          </label>
+        </div>
+        <p class="microcopy">“检查次数”只是数据记录顺序，不等于相同天数、EFC 或公里数。页面会保留每个电芯自己的真实 elapsed days；D_CORE 使用当前检查点匹配的 EIS 特征，但本 artifact 不含公里数。</p>
+      </section>
+
+      <section class="workspace">
+        <section id="fleet-panel" class="fleet-panel development-panel" role="tabpanel" aria-labelledby="tab-all">
+          <div class="panel-heading fleet-heading">
+            <div>
+              <span class="development-chip" data-development-label>228 real KIT cells · development replay</span>
+              <h2 id="fleet-title">这一刻，所有电芯是什么状态？</h2>
+            </div>
+            <p id="fleet-count"></p>
+          </div>
+          <div class="legend" aria-label="数据状态图例">
+            <span><i class="dot eligible"></i> B / D_CORE 都可配对预测</span>
+            <span><i class="dot history"></i> 历史不足</span>
+            <span><i class="dot h3"></i> 没有未来第 3 次检查</span>
+            <span><i class="dot unavailable"></i> 这个检查点没有记录</span>
+            <span><i class="dot attention"></i> 建议研究复核（模型分歧）</span>
+          </div>
+          <div id="fleet-grid" class="fleet-grid" aria-label="228 个电芯矩阵" data-roster-size="228"></div>
+        </section>
+
+        <aside class="queue-panel development-panel" aria-labelledby="queue-title">
+          <span class="development-chip" data-development-label>Development review · not an alarm</span>
+          <h2 id="queue-title">研究复核队列</h2>
+          <p class="microcopy">优先显示同一模型加入 EIS 前后差别最大的记录；这不是故障概率，也不是换电池建议。</p>
+          <div id="queue-summary" class="queue-summary"></div>
+          <ol id="review-queue" class="review-queue"></ol>
+        </aside>
+      </section>
+
+      <section class="detail-panel development-panel" aria-labelledby="detail-title">
+        <div class="panel-heading">
+          <div>
+            <span class="development-chip" data-development-label>Selected cell · Development OOF</span>
+            <h2 id="detail-title">选中电芯：从测量到预测</h2>
+          </div>
+          <p id="cell-identity"></p>
+        </div>
+
+        <div class="process-steps" aria-label="预测过程">
+          <span><b>1</b> 读取截至此刻的容量历史</span>
+          <span><b>2</b> 同一模型分别使用 B 与 D_CORE</span>
+          <span><b>3</b> 三次检查后才打开真实答案</span>
+        </div>
+
+        <div class="metric-grid">
+          <article><span>现在测得的容量</span><strong id="current-capacity"></strong><small id="q0-capacity"></small></article>
+          <article><span>现在测得的 SoH</span><strong id="current-soh"></strong><small>SoH = 当前容量 ÷ 初始容量</small></article>
+          <article class="model-metric b-view"><span id="b-view-label">B：预计损失 / 未来 SoH</span><strong id="b-forecast"></strong><small id="b-note"></small></article>
+          <article class="model-metric d-core-view"><span id="d-core-label">D_CORE：预计损失 / 未来 SoH</span><strong id="d-core-forecast"></strong><small id="d-core-note"></small></article>
+        </div>
+        <p id="prediction-explanation" class="plain-explanation"></p>
+
+        <div class="detail-layout">
+          <div class="history-card">
+            <h3>截至当前时刻的真实容量历史</h3>
+            <svg id="history-chart" viewBox="0 0 620 250" role="img" aria-labelledby="chart-title chart-desc">
+              <title id="chart-title">KIT 电芯历史 SoH 与两个模型的未来预测</title>
+              <desc id="chart-desc">实线是当前可见的真实历史；两条虚线分别连接 B 与 D_CORE 的未来预测点。</desc>
+              <g id="chart-grid"></g>
+              <g id="chart-labels"></g>
+              <polyline id="history-line" points="" fill="none" stroke="currentColor" stroke-width="3"></polyline>
+              <line id="b-forecast-line" class="forecast-line b-line" x1="0" y1="0" x2="0" y2="0"></line>
+              <line id="d-core-forecast-line" class="forecast-line d-core-line" x1="0" y1="0" x2="0" y2="0"></line>
+              <g id="history-points"></g>
+              <g id="forecast-points"></g>
+            </svg>
+            <div class="chart-legend"><span class="measured-key">真实测量</span><span class="b-key">B 预测</span><span class="d-core-key">D_CORE（B + EIS）预测</span></div>
+            <p class="microcopy">预测点不是测量值；当前时间线右侧的真实数据不会提前显示。</p>
+          </div>
+
+          <div class="maturation-column">
+            <div class="maturation-card" aria-live="polite">
+              <h3>三次检查后，回头核对</h3>
+              <div id="maturation-state" data-h3-maturity="locked"></div>
+            </div>
+            <div id="cell-statuses" class="status-strip"></div>
+            <p id="view-status" class="empty-message"></p>
+          </div>
+        </div>
+
+        <details>
+          <summary>技术细节和来源</summary>
+          <dl class="technical-list">
+            <dt>证据级别</dt><dd>KIT condition-held-out DEVELOPMENT OOF；不是 protected test。</dd>
+            <dt>主要目标</dt><dd><code>soh_loss_pp_h3 = SoH_t - SoH_t+3</code></dd>
+            <dt>特征视图</dt><dd>B：容量历史 + context；D_CORE：B + 当前检查点匹配的 EIS。</dd>
+            <dt>分组方式</dt><dd>完整实验条件留出；同一条件的三个电芯不会跨训练/验证。</dd>
+            <dt>模型选择</dt><dd><code>selection_performed=false</code>；页面只按相同模型家族并排比较 B 与 D_CORE。</dd>
+            <dt>Sensitivity</dt><dd>Primary 与 keep-last acquisition policy 的 6 组差值相同；timestamp/retry 语义仍是 provisional。</dd>
+            <dt>Cell / fold</dt><dd id="technical-cell"></dd>
+            <dt>来源 artifact</dt><dd id="technical-artifact"></dd>
+          </dl>
+        </details>
+      </section>
+
+      <p class="required-disclosure">
+        KIT 历史数据回放。页面展示的是 condition-held-out development OOF estimates；不是物理仿真、实时监控、protected external test、故障诊断或换电池建议。B 与 D_CORE 的差异不是 EIS 的因果效应。
+      </p>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

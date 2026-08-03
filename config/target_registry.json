@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "protocol_lineage": "v2",
+  "reference_capacity": {
+    "field": "cycle_0_discharge_capacity_mah",
+    "symbol": "Q0",
+    "allowed_source": "the maximum cumulative discharge-capacity endpoint among ox/red=0 rows at source cycle 0",
+    "forbidden_sources": [
+      "maximum capacity observed over the cell lifetime",
+      "any future cycle relative to the prediction row",
+      "a test-cell statistic fitted or selected after test evaluation"
+    ]
+  },
+  "primary_task": {
+    "id": "T0",
+    "features": "eis",
+    "target": "soh_percent",
+    "allowed_smoke_models": ["ridge", "pls"],
+    "formula": "100 * current_discharge_capacity_mah / Q0",
+    "primary_metric": "cell_macro_mae_percentage_points",
+    "prediction_clipping": "none"
+  },
+  "ablations": [
+    {
+      "id": "T0Q",
+      "features": "eis_q0",
+      "target": "soh_percent",
+      "allowed_smoke_models": ["ridge", "pls"],
+      "purpose": "Measure whether measured initial capacity adds information after SoH normalization."
+    },
+    {
+      "id": "T1",
+      "features": "eis",
+      "target": "capacity_mah",
+      "allowed_smoke_models": ["mean", "ridge", "pls"],
+      "purpose": "Measure absolute-capacity prediction without supplying Q0 as a feature."
+    },
+    {
+      "id": "T2",
+      "features": "eis_q0",
+      "target": "capacity_mah",
+      "allowed_smoke_models": ["ridge", "pls"],
+      "purpose": "Measure how much known initial capacity improves absolute-capacity prediction."
+    },
+    {
+      "id": "T3",
+      "features": "eis",
+      "target": "capacity_loss_mah",
+      "allowed_smoke_models": ["mean", "ridge", "pls"],
+      "formula": "Q0 - current_discharge_capacity_mah",
+      "purpose": "Measure whether EIS predicts absolute capacity loss."
+    }
+  ],
+  "required_non_eis_baselines": [
+    {
+      "id": "B0",
+      "features": "none",
+      "target": "soh_percent",
+      "allowed_smoke_models": ["mean"]
+    },
+    {
+      "id": "B1",
+      "features": "cycle",
+      "target": "soh_percent",
+      "allowed_smoke_models": ["ridge"]
+    },
+    {
+      "id": "B1Q",
+      "features": "cycle_q0",
+      "target": "soh_percent",
+      "allowed_smoke_models": ["ridge"]
+    },
+    {
+      "id": "B2",
+      "features": "cycle_q0",
+      "target": "capacity_mah",
+      "allowed_smoke_models": ["ridge"]
+    }
+  ]
+}
