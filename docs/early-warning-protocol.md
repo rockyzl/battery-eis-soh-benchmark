@@ -119,7 +119,8 @@ them to be weak.
 
 - valid compensated real/imaginary impedance at declared frequencies;
 - measurement temperature, nominal SoC and source quality indicators;
-- primary proposed view: room-temperature, nominal 50%-SoC spectrum, pending source audit.
+- governed paired-development view: room-temperature, nominal 50%-SoC spectrum, as approved by the
+  D_CORE readiness review for this development-only lineage.
 
 Frequency rows and repeated spectra are not independent batteries. Aggregation, missing-channel
 handling and physical transforms must be frozen without held-out outcomes and retain acquisition
@@ -188,10 +189,11 @@ a limitation, not mechanistic evidence.
 
 ## 8. Model-selection boundary
 
-Model families, search budgets, primary regression metric, uncertainty method and the O2 probability
-method are not frozen in this protocol. They must be chosen in a reviewed model-selection packet
-before formal fitting. The packet must include transparent baselines, constrained candidates and a
-paired simplicity rule under the 228-cell/76-condition effective scale.
+This protocol delegates model families, fixed budgets, metrics and uncertainty details to a reviewed
+model-selection packet. For the completed paired development run, that packet froze persistence and
+recent-slope baselines plus ElasticNet and HGB candidates, condition-balanced MAE, secondary error
+metrics and whole-condition paired bootstrap intervals. It performed no hyperparameter search,
+ensemble, champion selection or O2 probability modelling.
 
 Deep sequence models and ensembles are not default. An ensemble requires complete same-target OOF
 predictions, demonstrated held-condition error diversity, inner-fold-only weights, stable intervals
@@ -225,13 +227,16 @@ Required states include `eligible`, `insufficient history`, `missing EIS`, `no H
 11. Separate authorization for one protected evaluation.
 12. Independent result/limitation review and separate publication/resume-claim approval.
 
-## 11. Current implementation incompatibility
+## 11. Current implementation status
 
-The current task registry/configuration and engineering path were created for an earlier O2 binary
-classification robustness design. Their Logistic/HGB packet, class-support gates and PR-AUC/Brier
-primary metrics do not implement F1. They must fail closed or remain unused until a separately owned
-implementation wave aligns schemas, engine, runtime and tests with this protocol.
+The F1 development implementation is now aligned with this protocol. The governed paired B/D_CORE
+run completed 54/54 planned fits on 2,919 identical eligible snapshots from 180 cells and emitted
+23,352 condition-held-out OOF prediction rows. Independent recomputation supports bounded
+development display only. O2 fits and predictions remain zero.
 
-Passing old classification tests does not authorize F1 training or make old artifacts compatible.
-Every artifact remains `scientific_result=false`, `publication_ready=false` and
-`resume_approved=false` until the relevant gates are signed.
+The earlier O2 Logistic/HGB robustness lineage remains unused for this F1 result and cannot be
+relabeled as compatible evidence. The completed development artifacts retain
+`scientific_result=false`, `formal_model_result=false`, `protected_test_result=false`,
+`publication_ready=false`, `selection_performed=false`, `resume_approved=false` and
+`deployment_ready=false`. A separate authorization is still required for any protected/external
+evaluation, model selection, publication or deployment.

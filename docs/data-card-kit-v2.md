@@ -1,11 +1,13 @@
 # Data card — KIT battery ageing result data, version 2
 
 Source review date: 2026-08-01
-Repository integration status: `strict parser/audit implemented; QA and timestamp-semantics review pending`
+Repository integration status: `paired B/D_CORE development OOF completed; protected evaluation not authorized`
 
 This card distinguishes facts stated by the official sources from counts reproduced by the local
-strict audit. The audit establishes inventory and structure; it does not yet establish a
-training-eligible EIS/capacity snapshot alignment.
+strict audit. A later, separately reviewed D_CORE readiness decision approved one bounded
+development-only EIS/capacity alignment: 2,919 identical B/D_CORE snapshots from 180 cells. The
+governed paired run completed 54/54 fits and produced 23,352 OOF prediction rows. This does not
+authorize model selection, protected/external evaluation, publication or deployment.
 
 ## Authoritative sources
 
@@ -69,8 +71,9 @@ machine-readable report.
 ## Reproduced local audit inventory
 
 `scripts/audit_kit_v2.py` produced the local-only report
-`artifacts/local/kit-v2-audit.json` at `2026-08-01T22:29:48.576446+00:00`. The report is intentionally
-outside the tracked scientific-result set while QA is open.
+`artifacts/local/kit-v2-audit.json` at `2026-08-01T22:29:48.576446+00:00`. The source audit and formal
+run artifacts remain intentionally outside Git; compact hash-bound development projections and
+reviewed documentation are committed for bounded replay.
 
 | Audit item | Reproduced count |
 |---|---:|
@@ -95,17 +98,20 @@ The audited archives are:
 The audit also pins the official example-script evidence at commit
 `db5ec90cd2827824d11f74f95ed149b73acc6015`. No source code was copied.
 
-### Blocking timestamp ambiguity
+### Timestamp semantics and paired-development disposition
 
 The official fields include a timestamp, duration and timestamp-origin metadata, but the reviewed
-evidence does not establish one universal rule for whether a relevant snapshot completes at
-`timestamp` or `timestamp + duration`. The local audit therefore marks all 3,993 RT-50 EIS/capacity
-matches as `ambiguous_timestamp_candidate` with
-`timestamp_only_candidate_not_training_eligible`. A documented 60-hour grouping heuristic is used
-only to flag possible retry measurements; candidates are not silently dropped.
+evidence does not establish one universal rule for whether every acquisition completes at
+`timestamp` or `timestamp + duration`. The initial inventory therefore marked all 3,993 RT-50
+EIS/capacity candidates as timestamp-ambiguous and used a documented 60-hour heuristic only to flag
+possible retries.
 
-Until a source-backed completion policy is reviewed and bound to the manifest, these matches cannot
-become model snapshots and Gate-3 real-data training cannot start.
+The later D_CORE readiness review used the official check-up order, physical-cell identity and frozen
+acquisition policy to authorize exactly 2,919 paired snapshots for one condition-held-out
+development OOF run. That run is complete, while timestamp and retry semantics remain explicitly
+provisional. The authorization cannot be reused for protected/external testing, model selection,
+publication or deployment. See `docs/audits/kit-d-core-eis-readiness-zh.md` and
+`docs/live-early-warning-tasks.md`.
 
 ## Observation hierarchy and label alignment
 
@@ -174,8 +180,8 @@ the training fold.
 
 The local audit reports context-dependent missingness, including an entirely missing compensated
 room-temperature 50%-SoC value at the highest-frequency sequence and partial coverage around 100 Hz.
-The QA-accepted audit must freeze missingness by frequency and context. It must not silently fill
-these fields before the split.
+The governed paired manifest freezes missingness by frequency and context; learned handling occurs
+inside the outer-training partition and does not silently fill fields before the split.
 
 ## Split and leakage boundary
 

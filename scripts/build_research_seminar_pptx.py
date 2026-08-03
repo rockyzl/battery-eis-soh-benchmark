@@ -1174,7 +1174,7 @@ def build(output: Path, preview_dir: Path) -> None:
     experiments = [
         ("01", "错误分析", "解释 slope 胜出的 conditions", RED),
         ("02", "Horizon sensitivity", "新 protocol 下比较 H1/H3/H5", BLUE),
-        ("03", "EIS incremental", "同 snapshot / fold / model 比 B vs D_CORE", PURPLE),
+        ("03", "解释 EIS 增量", "分析 mode × family、共线性与稳定性", PURPLE),
         ("04", "变量稳定性", "condition-grouped inner CV", GREEN),
         ("05", "外部验证", "冻结后申请一次 protected evaluation", ORANGE),
         ("06", "O2 / noise", "先取得 capacity technical repeats", CYAN),
@@ -1189,7 +1189,7 @@ def build(output: Path, preview_dir: Path) -> None:
         d.text(body, x + 0.96, y + 0.63, 4.42, 0.38, 9, MUTED)
     d.rect(0.72, 6.35, 11.74, 0.48, NAVY, NAVY, 0.08)
     d.text(
-        "先解释失败模式，再检验 EIS 增量，最后讨论选择、告警与部署。",
+        "配对 EIS 比较已完成；先解释相反方向，再讨论选择、告警与部署。",
         0.94,
         6.46,
         11.3,
@@ -1221,7 +1221,7 @@ def build(output: Path, preview_dir: Path) -> None:
         [
             "protected / external test",
             "模型选择",
-            "EIS replication",
+            "EIS 通用 / 因果结论",
             "O2 告警",
             "生产影响",
             "公开发布批准",

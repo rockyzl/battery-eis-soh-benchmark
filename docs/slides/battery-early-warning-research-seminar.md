@@ -450,15 +450,15 @@ Speaker notes:
 
 1. **错误分析：**找出 cyclic/profile 中 recent slope 优于 fitted models 的 conditions。
 2. **Horizon sensitivity：**在新 protocol 下比较 H1/H3/H5，同时报告真实 days/EFC。
-3. **EIS incremental study：**同 snapshot、同 fold、同 model family 比较 B 与 D_CORE。
+3. **解释 EIS 增量结果：**分析 mode × family 交互、共线性、特征稳定性和 condition-level errors。
 4. **变量稳定性：**只在 condition-grouped inner CV 中做 selection/stability 分析。
 5. **外部验证：**冻结模型后，申请一次 protected evaluation；再寻找跨数据集复现。
 6. **O2/noise：**取得 capacity technical repeats 后再决定是否建立快速衰减概率。
 
 <!--
 Speaker notes:
-下一步不是盲目增加神经网络。先解释失败模式，再检验 EIS 是否真正增加信息，最后才讨论选择、
-告警和部署。
+下一步不是盲目增加神经网络。配对 B/D_CORE 开发比较已经完成；现在先解释为什么不同 mode 和
+model family 给出相反方向，再决定是否值得进入选择、protected test、告警或部署研究。
 -->
 
 ---
@@ -473,12 +473,13 @@ Speaker notes:
 - 2,919 matched snapshots、23,352 OOF prediction rows 和完整 hash lineage；
 - 一个关键观察：calendar 与 cyclic/profile 没有相同的描述性最佳方法。
 
-**仍未完成：**protected test、模型选择、EIS 增量、O2 告警、生产影响和公开发布批准。
+**仍未完成：**protected/external test、模型选择、EIS 的通用或因果结论、O2 告警、生产影响和
+公开发布批准。
 
 > 可靠的研究结论，不是永远找到一个更复杂的赢家；有时是知道简单方法在哪里更强。
 
 <!--
 Speaker notes:
-项目现在已经从“纸上计划”进入了真实训练和可审计结果阶段，但还没有跨过最终验证边界。下一轮
-工作的重点是解释模式差异、加入严格配对的 EIS 对照，并保留 protected test。
+项目已经完成严格配对的 B/D_CORE development OOF，但还没有跨过最终验证边界。下一轮重点是
+解释 mode × family 差异和特征稳定性；在冻结新协议并独立批准前，不打开 protected test。
 -->
