@@ -298,11 +298,8 @@ def test_generated_projection_is_bound_to_governed_artifacts(
     assert metadata["artifactSchema"] == "kit_f1_o2_dev_v2"
     assert metadata["sourceRunId"] == "kit-f1-paired-b-dcore-dev-v2-20260802T201053-cdt"
     generator_module = _load_generator_module()
-    start_manifest = json.loads(
-        (generator_module.DEFAULT_RUN / "start_manifest.json").read_text(encoding="utf-8")
-    )
-    assert start_manifest["run_kind"] == "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2"
-    assert metadata["runKind"] == start_manifest["run_kind"]
+    assert generator_module.PAIRED_RUN_KIND == "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2"
+    assert metadata["runKind"] == generator_module.PAIRED_RUN_KIND
     assert metadata["artifactValidationPassed"] is True
     assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in metadata["sourceHashes"].values())
     assert metadata["sourceHashes"]["snapshotManifest"] == SNAPSHOT_MANIFEST_SHA256
@@ -313,6 +310,7 @@ def test_generated_projection_is_bound_to_governed_artifacts(
         "composite prediction key collision",
         "expected exactly 12 paired-delta identities",
         "O2 output must remain empty",
+        '"runKind": start["run_kind"]',
         "This script never edits the governed run directory",
     ):
         assert guard in generator
