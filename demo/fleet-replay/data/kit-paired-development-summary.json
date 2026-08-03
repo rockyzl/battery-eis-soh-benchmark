@@ -15,6 +15,7 @@
     "Timestamp and retry semantics remain provisional."
   ],
   "metadata": {
+    "artifactSchema": "kit_f1_o2_dev_v2",
     "artifactValidationPassed": true,
     "cellsWithPrediction": 180,
     "cellsWithoutPrediction": 48,
@@ -38,7 +39,7 @@
     "retryRows": 6,
     "retrySemanticsProvisional": true,
     "rosterCount": 228,
-    "runKind": "KIT_F1_O2_DEVELOPMENT_V2",
+    "runKind": "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2",
     "runStatus": "completed",
     "schemaVersion": "kit_paired_development_projection_v1",
     "scientificResult": false,

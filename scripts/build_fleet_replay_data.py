@@ -49,6 +49,7 @@ EXPECTED_COUNTS = {
     "deltas": 12,
     "retry_sensitivity": 6,
 }
+PAIRED_RUN_KIND = "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2"
 
 
 def _sha256(path: Path) -> str:
@@ -83,6 +84,7 @@ def _canonical_json(value: Any, *, pretty: bool = False) -> str:
 def _validate_governed_run(run_dir: Path) -> tuple[dict[str, Any], ...]:
     final = _read_json(run_dir / "final_manifest.json")
     terminal = _read_json(run_dir / "terminal.json")
+    start = _read_json(run_dir / "start_manifest.json")
     summary = _read_json(run_dir / "engine_summary.json")
     deltas = _read_json(run_dir / "paired_deltas.json")
     retry = _read_json(run_dir / "retry_sensitivity.json")
@@ -96,8 +98,8 @@ def _validate_governed_run(run_dir: Path) -> tuple[dict[str, Any], ...]:
             raise ValueError("derived data must retain every negative scientific/publication flag")
     if any(summary.get(field) is not False for field in CLAIM_FIELDS):
         raise ValueError("engine summary must carry every negative scientific/publication flag")
-    if summary.get("run_kind") != "KIT_F1_O2_DEVELOPMENT_V2":
-        raise ValueError("unexpected governed run kind")
+    if start.get("run_kind") != PAIRED_RUN_KIND:
+        raise ValueError("unexpected paired start-manifest run kind")
     if summary.get("completed_fits") != EXPECTED_COUNTS["fits"]:
         raise ValueError("expected exactly 54 completed paired-development fits")
     if summary.get("o2_results") != []:
@@ -120,7 +122,7 @@ def _validate_governed_run(run_dir: Path) -> tuple[dict[str, Any], ...]:
     ):
         if expected_hashes.get(name) != _sha256(run_dir / name):
             raise ValueError(f"governed artifact hash mismatch: {name}")
-    return final, terminal, summary, deltas, retry
+    return final, terminal, start, summary, deltas, retry
 
 
 def _compact_snapshot(row: dict[str, Any]) -> dict[str, Any]:
@@ -226,7 +228,7 @@ def build(
     metrics_csv: Path,
     deltas_csv: Path,
 ) -> None:
-    final, terminal, summary, deltas, retry = _validate_governed_run(run_dir)
+    final, terminal, start, summary, deltas, retry = _validate_governed_run(run_dir)
 
     cells: dict[str, dict[str, Any]] = {}
     snapshots_by_id: dict[str, dict[str, Any]] = {}
@@ -336,9 +338,10 @@ def build(
     }
     metadata = {
         "schemaVersion": "kit_paired_development_projection_v1",
+        "artifactSchema": summary["artifact_schema_version"],
         "sourceRunId": run_dir.name,
         "evidenceMode": "KIT condition-held-out DEVELOPMENT OOF",
-        "runKind": summary["run_kind"],
+        "runKind": start["run_kind"],
         "runStatus": terminal["status"],
         "artifactValidationPassed": final["artifact_validation_passed"],
         "rosterCount": len(cells),

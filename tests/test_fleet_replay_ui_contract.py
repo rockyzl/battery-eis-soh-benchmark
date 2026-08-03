@@ -295,7 +295,14 @@ def test_generated_projection_is_bound_to_governed_artifacts(
 ) -> None:
     metadata = data["metadata"]
     assert metadata["schemaVersion"] == "kit_paired_development_projection_v1"
+    assert metadata["artifactSchema"] == "kit_f1_o2_dev_v2"
     assert metadata["sourceRunId"] == "kit-f1-paired-b-dcore-dev-v2-20260802T201053-cdt"
+    generator_module = _load_generator_module()
+    start_manifest = json.loads(
+        (generator_module.DEFAULT_RUN / "start_manifest.json").read_text(encoding="utf-8")
+    )
+    assert start_manifest["run_kind"] == "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2"
+    assert metadata["runKind"] == start_manifest["run_kind"]
     assert metadata["artifactValidationPassed"] is True
     assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in metadata["sourceHashes"].values())
     assert metadata["sourceHashes"]["snapshotManifest"] == SNAPSHOT_MANIFEST_SHA256
@@ -324,6 +331,9 @@ def test_mutated_snapshot_manifest_fails_governed_hash_validation(tmp_path: Path
         "resume_approved": False,
     }
     payloads = {
+        "start_manifest.json": {
+            "run_kind": "KIT_F1_PAIRED_B_D_CORE_DEVELOPMENT_V2",
+        },
         "engine_summary.json": {
             **negative_claims,
             "run_kind": "KIT_F1_O2_DEVELOPMENT_V2",
@@ -388,6 +398,13 @@ def test_mutated_snapshot_manifest_fails_governed_hash_validation(tmp_path: Path
         ValueError,
         match=r"^governed artifact hash mismatch: snapshot_manifest\.jsonl$",
     ):
+        _load_generator_module()._validate_governed_run(run_copy)
+
+    (run_copy / "start_manifest.json").write_text(
+        json.dumps({"run_kind": "KIT_F1_O2_DEVELOPMENT_V2"}, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=r"^unexpected paired start-manifest run kind$"):
         _load_generator_module()._validate_governed_run(run_copy)
 
 
