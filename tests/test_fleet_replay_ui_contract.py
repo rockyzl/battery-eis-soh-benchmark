@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import re
-import shutil
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, cast
@@ -23,13 +23,6 @@ SUMMARY_PATH = DEMO / "data" / "kit-paired-development-summary.json"
 METRICS_PATH = DEMO / "data" / "kit-paired-development-metrics.csv"
 DELTAS_PATH = DEMO / "data" / "kit-paired-development-deltas.csv"
 GENERATOR_PATH = ROOT / "scripts" / "build_fleet_replay_data.py"
-GOVERNED_RUN = (
-    ROOT
-    / "artifacts"
-    / "local"
-    / "paired-runs"
-    / "kit-f1-paired-b-dcore-dev-v2-20260802T201053-cdt"
-)
 SNAPSHOT_MANIFEST_SHA256 = "810d58c29ee8c3458cda80cef0cb1e0d08a3e8bee2d17e5a95b405db35a0608f"
 CURRENT_DOCS = (
     ROOT / "docs" / "early-warning-protocol.md",
@@ -321,18 +314,68 @@ def test_generated_projection_is_bound_to_governed_artifacts(
 def test_mutated_snapshot_manifest_fails_governed_hash_validation(tmp_path: Path) -> None:
     run_copy = tmp_path / "governed-run"
     run_copy.mkdir()
-    required = (
-        "final_manifest.json",
-        "terminal.json",
-        "engine_summary.json",
-        "paired_deltas.json",
-        "retry_sensitivity.json",
-        "fold_registry.json",
-        "oof_predictions.jsonl",
-        "snapshot_manifest.jsonl",
+
+    negative_claims = {
+        "formal_model_result": False,
+        "protected_test_result": False,
+        "publication_ready": False,
+        "scientific_result": False,
+        "selection_performed": False,
+        "resume_approved": False,
+    }
+    payloads = {
+        "engine_summary.json": {
+            **negative_claims,
+            "run_kind": "KIT_F1_O2_DEVELOPMENT_V2",
+            "completed_fits": 54,
+            "metrics": [{} for _ in range(24)],
+            "o2_results": [],
+        },
+        "paired_deltas.json": {
+            **negative_claims,
+            "paired_deltas": [{} for _ in range(12)],
+        },
+        "retry_sensitivity.json": {
+            **negative_claims,
+            "results": [{} for _ in range(6)],
+        },
+        "fold_registry.json": {},
+    }
+    for name, payload in payloads.items():
+        (run_copy / name).write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+    (run_copy / "oof_predictions.jsonl").write_text("", encoding="utf-8")
+    (run_copy / "snapshot_manifest.jsonl").write_text(
+        json.dumps({"capacity_ah": 2.5}, separators=(",", ":"), sort_keys=True) + "\n",
+        encoding="utf-8",
     )
-    for name in required:
-        shutil.copy2(GOVERNED_RUN / name, run_copy / name)
+    artifacts_sha256 = {
+        name: hashlib.sha256((run_copy / name).read_bytes()).hexdigest()
+        for name in (
+            "engine_summary.json",
+            "fold_registry.json",
+            "oof_predictions.jsonl",
+            "paired_deltas.json",
+            "retry_sensitivity.json",
+            "snapshot_manifest.jsonl",
+        )
+    }
+    (run_copy / "final_manifest.json").write_text(
+        json.dumps(
+            {
+                **negative_claims,
+                "artifact_validation_passed": True,
+                "exit_code": 0,
+                "artifacts_sha256": artifacts_sha256,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (run_copy / "terminal.json").write_text(
+        json.dumps({"status": "completed", "exit_code": 0}, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
     snapshot_path = run_copy / "snapshot_manifest.jsonl"
     lines = snapshot_path.read_text(encoding="utf-8").splitlines()

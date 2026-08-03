@@ -1443,6 +1443,53 @@ def _write_v2_config_bundle(tmp_path: Path, config: dict[str, object]) -> Path:
     return config_path
 
 
+def _write_limited_go_readiness_bundle(
+    tmp_path: Path,
+) -> tuple[Path, dict[str, object], Path, dict[str, object]]:
+    """Create a portable repository-shaped readiness fixture with real hash validation."""
+    repository = tmp_path / "repository"
+    config_dir = repository / "config"
+    evidence_dir = repository / "artifacts" / "audits"
+    config_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+
+    root = Path(__file__).parents[1]
+    schema_source = root / "config" / "kit_f1_o2_development_v2.schema.json"
+    schema_path = config_dir / schema_source.name
+    schema_path.write_bytes(schema_source.read_bytes())
+
+    config = json.loads((root / "config" / "kit_f1_o2_development_v2.json").read_text())
+    readiness = config["readiness"]
+    evidence_payload = {
+        "decision": readiness["eis_alignment_decision"],
+        "cohorts": {
+            "b_h3_total": readiness["expected_paired_snapshots"],
+            "d_core_total": readiness["expected_paired_snapshots"],
+            "b_missing_eis_total": 0,
+        },
+        "features": {
+            "d_core_frequencies": readiness["expected_eis_frequencies"],
+            "d_core_values": readiness["expected_eis_values"],
+        },
+        "alignment": {
+            "eis_completion_after_or_at_h3_endpoint_violations": 0,
+            "next_capacity_boundary_violations": 0,
+        },
+        "training_executed": False,
+    }
+    evidence_path = evidence_dir / "kit-d-core-eis-readiness.json"
+    evidence_path.write_text(
+        json.dumps(evidence_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    readiness["eis_readiness_artifact_sha256"] = hashlib.sha256(
+        evidence_path.read_bytes()
+    ).hexdigest()
+    config["artifact_schema_sha256"] = hashlib.sha256(schema_path.read_bytes()).hexdigest()
+    config_path = config_dir / "kit_f1_o2_development_v2.json"
+    config_path.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return config_path, readiness, evidence_path, evidence_payload
+
+
 def test_c05_execute_emits_exactly_seven_scientific_artifacts_no_runtime_files(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1554,7 +1601,7 @@ def test_c06_exact_limited_go_reaches_frozen_source_binding_before_source_load(
         raise DevelopmentRunError("source binding reached")
 
     monkeypatch.setattr("battery_eis_soh.kit_dev_training._verify_source_binding", stop_at_source)
-    config_path = Path(__file__).parents[1] / "config/kit_f1_o2_development_v2.json"
+    config_path, _, _, _ = _write_limited_go_readiness_bundle(tmp_path)
     with pytest.raises(DevelopmentRunError, match="source binding reached"):
         execute_engineering_analysis(
             eoc_zip=tmp_path / "eoc.zip",
@@ -1639,28 +1686,21 @@ def test_c06c_schema_hash_binding_poison_fails_before_source_or_output(
 def test_c06d_readiness_evidence_mutation_and_semantic_mismatch_fail_closed(
     tmp_path: Path,
 ) -> None:
-    repository = tmp_path / "repository"
-    config_dir = repository / "config"
-    evidence_dir = repository / "artifacts/audits"
-    config_dir.mkdir(parents=True)
-    evidence_dir.mkdir(parents=True)
-    config_path = config_dir / "kit_f1_o2_development_v2.json"
-    config_path.write_text("{}")
-    source = Path(__file__).parents[1] / "artifacts/audits/kit-d-core-eis-readiness.json"
-    evidence = evidence_dir / "kit-d-core-eis-readiness.json"
-    evidence.write_bytes(source.read_bytes())
-    readiness = json.loads(
-        (Path(__file__).parents[1] / "config/kit_f1_o2_development_v2.json").read_text()
-    )["readiness"]
+    config_path, readiness, evidence, evidence_payload = _write_limited_go_readiness_bundle(
+        tmp_path
+    )
     kit_dev_training._verify_limited_go_readiness(config_path, readiness)
 
-    evidence.write_bytes(source.read_bytes() + b"\n")
+    original = evidence.read_bytes()
+    evidence.write_bytes(original + b"\n")
     with pytest.raises(DevelopmentRunError, match="SHA-256"):
         kit_dev_training._verify_limited_go_readiness(config_path, readiness)
 
-    payload = json.loads(source.read_text())
-    payload["alignment"]["next_capacity_boundary_violations"] = 1
-    evidence.write_text(json.dumps(payload, sort_keys=True))
+    payload = dict(evidence_payload)
+    alignment = dict(cast("dict[str, object]", payload["alignment"]))
+    alignment["next_capacity_boundary_violations"] = 1
+    payload["alignment"] = alignment
+    evidence.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
     semantic_readiness = {
         **readiness,
         "eis_readiness_artifact_sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),

@@ -112,6 +112,63 @@ def _canonical_sha256(value: object) -> str:
     ).hexdigest()
 
 
+def _write_paired_readiness_config(tmp_path: Path) -> Path:
+    """Create a portable, repository-shaped config with hash-bound readiness evidence."""
+    repository = tmp_path / "repository"
+    config_dir = repository / "config"
+    evidence_dir = repository / "artifacts" / "audits"
+    config_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+
+    schema_source = F1_V2_CONFIG.with_name("kit_f1_o2_development_v2.schema.json")
+    schema_path = config_dir / schema_source.name
+    schema_path.write_bytes(schema_source.read_bytes())
+    config = json.loads(F1_V2_CONFIG.read_text())
+    readiness = config["readiness"]
+    evidence = {
+        "decision": readiness["eis_alignment_decision"],
+        "cohorts": {
+            "b_h3_total": readiness["expected_paired_snapshots"],
+            "d_core_total": readiness["expected_paired_snapshots"],
+            "b_missing_eis_total": 0,
+        },
+        "features": {
+            "d_core_frequencies": readiness["expected_eis_frequencies"],
+            "d_core_values": readiness["expected_eis_values"],
+        },
+        "alignment": {
+            "eis_completion_after_or_at_h3_endpoint_violations": 0,
+            "next_capacity_boundary_violations": 0,
+        },
+        "training_executed": False,
+    }
+    evidence_path = evidence_dir / "kit-d-core-eis-readiness.json"
+    evidence_path.write_text(
+        json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    readiness["eis_readiness_artifact_sha256"] = hashlib.sha256(
+        evidence_path.read_bytes()
+    ).hexdigest()
+    config["artifact_schema_sha256"] = hashlib.sha256(schema_path.read_bytes()).hexdigest()
+    config_path = config_dir / F1_V2_CONFIG.name
+    config_path.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    source_root = Path(__file__).resolve().parents[1]
+    package_dir = repository / "src" / "battery_eis_soh"
+    package_dir.mkdir(parents=True)
+    for name in ("kit_v2.py", "kit_dev_training.py"):
+        shutil.copy2(source_root / "src" / "battery_eis_soh" / name, package_dir / name)
+    shutil.copy2(source_root / "uv.lock", repository / "uv.lock")
+    shutil.copy2(source_root / "pyproject.toml", repository / "pyproject.toml")
+    scripts_dir = repository / "scripts"
+    scripts_dir.mkdir()
+    shutil.copy2(
+        source_root / "scripts" / "run_kit_dev_engineering.py",
+        scripts_dir / "run_kit_dev_engineering.py",
+    )
+    return config_path
+
+
 def _artifact_base() -> dict[str, object]:
     return {**SCIENTIFIC_RESULT_FLAGS, "artifact_schema_version": F1_V2_SCHEMA_VERSION}
 
@@ -2207,7 +2264,8 @@ def test_paired_authorization_is_single_use_and_wrong_eis_binding_fails(
     eoc.write_bytes(b"paired EOC fixture")
     eis.write_bytes(b"paired EIS fixture")
     output = tmp_path / "paired-run"
-    runner = Path(__file__).resolve().parents[1] / "scripts/run_kit_dev_engineering.py"
+    config_path = _write_paired_readiness_config(tmp_path)
+    runner = config_path.parent.parent / "scripts" / "run_kit_dev_engineering.py"
     authorization = tmp_path / "paired-authorization.json"
     authorization.write_text(
         json.dumps(_paired_authorization_payload({key: "0" * 64 for key in PAIRED_BINDING_KEYS}))
@@ -2216,7 +2274,7 @@ def test_paired_authorization_is_single_use_and_wrong_eis_binding_fails(
         eoc_zip=eoc,
         eis_zip=eis,
         output_dir=output,
-        config_path=F1_V2_CONFIG,
+        config_path=config_path,
         authorization_path=authorization,
         runner_path=runner,
     )
