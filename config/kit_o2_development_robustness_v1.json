@@ -1,0 +1,96 @@
+{
+  "$schema": "./kit_o2_development_robustness_v1.schema.json",
+  "config_id": "kit_o2_development_robustness_v1",
+  "development_only": true,
+  "seed": 20260801,
+  "outcome": {
+    "id": "O2_RAPID_LOSS_5PP_H3",
+    "horizon_checkups": 3,
+    "loss_threshold_percentage_points": 5.0
+  },
+  "acquisitions": {
+    "eligibility": "source_valid_charged_rt50",
+    "primary_policy": "equal_finite_mean_per_frequency_v1",
+    "sensitivity_policy": "keep_last_acquisition_v1",
+    "keep_last_tie_key": [
+      "timestamp_s",
+      "sd_block_id",
+      "source_member",
+      "source_line",
+      "acquisition_id"
+    ],
+    "retry_window_seconds": 216000,
+    "retry_window_role": "flag_only_never_group_or_drop"
+  },
+  "weights": {
+    "policy": "equal_condition_then_cell_then_checkup_v1",
+    "fit_normalization": "mean_one",
+    "metric_normalization": "mean_one"
+  },
+  "validation": {
+    "outer_group_folds": 3,
+    "inner_group_folds": 2,
+    "minimum_positive_supporting_conditions_per_mode": 8,
+    "minimum_negative_supporting_conditions_per_mode": 8,
+    "minimum_positive_supporting_conditions_per_validation_fold": 2,
+    "minimum_negative_supporting_conditions_per_validation_fold": 2
+  },
+  "models": {
+    "logistic_elastic_net": {
+      "C": 1.0,
+      "l1_ratio": 0.5,
+      "solver": "saga",
+      "max_iter": 500,
+      "tol": 0.0001,
+      "class_weight": null,
+      "random_state": 20260801
+    },
+    "hist_gradient_boosting": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 7,
+      "max_iter": 10,
+      "min_samples_leaf": 20,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "class_weight": null,
+      "random_state": 20260801
+    }
+  },
+  "calibration": {
+    "method": "weighted_platt_sigmoid_v1",
+    "maximum_iterations": 200,
+    "probability_clip": 1e-6
+  },
+  "metrics": {
+    "primary": "condition_balanced_pooled_pr_auc_v1",
+    "brier": "condition_balanced_pooled_brier_v1",
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 20260801,
+    "bootstrap_interval_percent": 95,
+    "minimum_valid_bootstrap_draws": 1900
+  },
+  "sensitivity_stop_margins": {
+    "pr_auc_delta_absolute_change": 0.02,
+    "brier_delta_absolute_change": 0.01,
+    "stop_on_pr_auc_delta_sign_reversal": true
+  },
+  "resources": {
+    "soft_drain_seconds": 420,
+    "hard_stop_seconds": 480,
+    "heartbeat_max_interval_seconds": 15,
+    "heartbeat_stale_seconds": 30,
+    "soft_rss_bytes": 1717986918,
+    "hard_rss_bytes": 2147483648,
+    "threadpool_limit": 1
+  },
+  "authorization": {
+    "scientific_result": false,
+    "publication_ready": false,
+    "resume_approved": false,
+    "formal_model_result": false,
+    "protected_test_result": false,
+    "timestamp_semantics_provisional": true,
+    "retry_semantics_provisional": true,
+    "selection_performed": false
+  }
+}

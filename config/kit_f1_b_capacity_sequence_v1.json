@@ -1,0 +1,85 @@
+{
+  "config_id": "kit_f1_b_capacity_sequence_v1",
+  "artifact_schema_version": "kit_f1_b_capacity_sequence_v1",
+  "artifact_schema_sha256": "cee2f554d7a6f69d04aca2eb0b700292114c42884d9dc873afb57c2a141e110b",
+  "source": {
+    "eoc_sha256": "95de03af7d73efdeed97fcd13fbdca2eeabe85b2971b08394b665c8639b3e140",
+    "expected_cells": 228,
+    "expected_capacity_endpoints": 3999
+  },
+  "readiness": {
+    "target_data_go": true,
+    "execution_authorized": false,
+    "completion_sequence_verified": true
+  },
+  "target": {
+    "task_id": "F1_SOH_LOSS_PP_H3",
+    "kind": "continuous_regression_primary",
+    "name": "soh_loss_pp_h3",
+    "horizon_completed_checkups": 3,
+    "negative_values": "preserve_without_clipping"
+  },
+  "feature_view": {
+    "id": "B",
+    "feature_names": [
+      "current_soh_percent",
+      "previous_soh_percent",
+      "two_checkups_back_soh_percent",
+      "last_checkup_loss_pp",
+      "two_interval_loss_pp",
+      "checkup_index",
+      "elapsed_days_since_q0",
+      "normalized_cumulative_throughput_q0",
+      "age_temperature_c",
+      "age_charge_rate_c",
+      "age_discharge_rate_c",
+      "age_profile"
+    ],
+    "eis_allowed": false,
+    "o2_allowed": false
+  },
+  "validation": {
+    "outer_group_folds": 3,
+    "inner_group_folds": 2,
+    "group": "complete_experimental_condition"
+  },
+  "models": {
+    "baselines": ["persistence_zero_loss", "recent_slope_h3"],
+    "elastic_net_regression": {
+      "alpha": 0.01,
+      "l1_ratio": 0.1,
+      "max_iter": 5000,
+      "random_state": 20260801
+    },
+    "hist_gradient_boosting_regressor": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 7,
+      "max_iter": 100,
+      "min_samples_leaf": 20,
+      "l2_regularization": 1.0,
+      "random_state": 20260801
+    }
+  },
+  "metrics": [
+    "condition_balanced_mae_pp_v1",
+    "condition_balanced_median_ae_pp_v1",
+    "condition_balanced_rmse_pp_v1",
+    "condition_balanced_signed_bias_pp_v1",
+    "condition_balanced_r2_v1"
+  ],
+  "resources": {
+    "soft_drain_seconds": 420,
+    "hard_stop_seconds": 480,
+    "hard_rss_bytes": 2147483648,
+    "minimum_free_bytes": 268435456,
+    "threadpool_limit": 1
+  },
+  "authorization": {
+    "scientific_result": false,
+    "publication_ready": false,
+    "resume_approved": false,
+    "formal_model_result": false,
+    "protected_test_result": false,
+    "selection_performed": false
+  }
+}

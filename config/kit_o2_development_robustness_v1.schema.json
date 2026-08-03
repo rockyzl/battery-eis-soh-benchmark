@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciencesloop.local/schemas/kit_o2_development_robustness_v1.schema.json",
+  "title": "KIT O2 development robustness v1 configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "config_id", "development_only", "seed", "outcome", "acquisitions", "weights",
+    "validation", "models", "calibration", "metrics", "sensitivity_stop_margins",
+    "resources", "authorization"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_id": {"const": "kit_o2_development_robustness_v1"},
+    "development_only": {"const": true},
+    "seed": {"const": 20260801},
+    "outcome": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "horizon_checkups", "loss_threshold_percentage_points"],
+      "properties": {
+        "id": {"const": "O2_RAPID_LOSS_5PP_H3"},
+        "horizon_checkups": {"const": 3},
+        "loss_threshold_percentage_points": {"const": 5.0}
+      }
+    },
+    "acquisitions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligibility", "primary_policy", "sensitivity_policy", "keep_last_tie_key", "retry_window_seconds", "retry_window_role"],
+      "properties": {
+        "eligibility": {"const": "source_valid_charged_rt50"},
+        "primary_policy": {"const": "equal_finite_mean_per_frequency_v1"},
+        "sensitivity_policy": {"const": "keep_last_acquisition_v1"},
+        "keep_last_tie_key": {"const": ["timestamp_s", "sd_block_id", "source_member", "source_line", "acquisition_id"]},
+        "retry_window_seconds": {"const": 216000},
+        "retry_window_role": {"const": "flag_only_never_group_or_drop"}
+      }
+    },
+    "weights": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy", "fit_normalization", "metric_normalization"],
+      "properties": {
+        "policy": {"const": "equal_condition_then_cell_then_checkup_v1"},
+        "fit_normalization": {"const": "mean_one"},
+        "metric_normalization": {"const": "mean_one"}
+      }
+    },
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outer_group_folds", "inner_group_folds", "minimum_positive_supporting_conditions_per_mode", "minimum_negative_supporting_conditions_per_mode", "minimum_positive_supporting_conditions_per_validation_fold", "minimum_negative_supporting_conditions_per_validation_fold"],
+      "properties": {
+        "outer_group_folds": {"const": 3},
+        "inner_group_folds": {"const": 2},
+        "minimum_positive_supporting_conditions_per_mode": {"const": 8},
+        "minimum_negative_supporting_conditions_per_mode": {"const": 8},
+        "minimum_positive_supporting_conditions_per_validation_fold": {"const": 2},
+        "minimum_negative_supporting_conditions_per_validation_fold": {"const": 2}
+      }
+    },
+    "models": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logistic_elastic_net", "hist_gradient_boosting"],
+      "properties": {
+        "logistic_elastic_net": {"$ref": "#/$defs/logistic"},
+        "hist_gradient_boosting": {"$ref": "#/$defs/hgb"}
+      }
+    },
+    "calibration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "maximum_iterations", "probability_clip"],
+      "properties": {
+        "method": {"const": "weighted_platt_sigmoid_v1"},
+        "maximum_iterations": {"const": 200},
+        "probability_clip": {"const": 1e-6}
+      }
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["primary", "brier", "bootstrap_draws", "bootstrap_seed", "bootstrap_interval_percent", "minimum_valid_bootstrap_draws"],
+      "properties": {
+        "primary": {"const": "condition_balanced_pooled_pr_auc_v1"},
+        "brier": {"const": "condition_balanced_pooled_brier_v1"},
+        "bootstrap_draws": {"const": 2000},
+        "bootstrap_seed": {"const": 20260801},
+        "bootstrap_interval_percent": {"const": 95},
+        "minimum_valid_bootstrap_draws": {"const": 1900}
+      }
+    },
+    "sensitivity_stop_margins": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pr_auc_delta_absolute_change", "brier_delta_absolute_change", "stop_on_pr_auc_delta_sign_reversal"],
+      "properties": {
+        "pr_auc_delta_absolute_change": {"const": 0.02},
+        "brier_delta_absolute_change": {"const": 0.01},
+        "stop_on_pr_auc_delta_sign_reversal": {"const": true}
+      }
+    },
+    "resources": {
+      "type": "object", "additionalProperties": false,
+      "required": ["soft_drain_seconds", "hard_stop_seconds", "heartbeat_max_interval_seconds", "heartbeat_stale_seconds", "soft_rss_bytes", "hard_rss_bytes", "threadpool_limit"],
+      "properties": {
+        "soft_drain_seconds": {"const": 420},
+        "hard_stop_seconds": {"const": 480},
+        "heartbeat_max_interval_seconds": {"const": 15},
+        "heartbeat_stale_seconds": {"const": 30},
+        "soft_rss_bytes": {"const": 1717986918},
+        "hard_rss_bytes": {"const": 2147483648},
+        "threadpool_limit": {"const": 1}
+      }
+    },
+    "authorization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scientific_result", "publication_ready", "resume_approved", "formal_model_result", "protected_test_result", "timestamp_semantics_provisional", "retry_semantics_provisional", "selection_performed"],
+      "properties": {
+        "scientific_result": {"const": false},
+        "publication_ready": {"const": false},
+        "resume_approved": {"const": false},
+        "formal_model_result": {"const": false},
+        "protected_test_result": {"const": false},
+        "timestamp_semantics_provisional": {"const": true},
+        "retry_semantics_provisional": {"const": true},
+        "selection_performed": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "logistic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["C", "l1_ratio", "solver", "max_iter", "tol", "class_weight", "random_state"],
+      "properties": {
+        "C": {"const": 1.0}, "l1_ratio": {"const": 0.5}, "solver": {"const": "saga"},
+        "max_iter": {"const": 500}, "tol": {"const": 0.0001}, "class_weight": {"type": "null"},
+        "random_state": {"const": 20260801}
+      }
+    },
+    "hgb": {
+      "type": "object", "additionalProperties": false,
+      "required": ["learning_rate", "max_leaf_nodes", "max_iter", "min_samples_leaf", "l2_regularization", "early_stopping", "class_weight", "random_state"],
+      "properties": {
+        "learning_rate": {"const": 0.05}, "max_leaf_nodes": {"const": 7}, "max_iter": {"const": 10},
+        "min_samples_leaf": {"const": 20}, "l2_regularization": {"const": 1.0},
+        "early_stopping": {"const": false}, "class_weight": {"type": "null"},
+        "random_state": {"const": 20260801}
+      }
+    }
+  }
+}
