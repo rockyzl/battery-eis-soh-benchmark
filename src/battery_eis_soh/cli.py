@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
 from .dataset import load_selection_dataset, load_state_dataset
+from .early_warning import synthetic_early_warning_contract_demo
 from .evaluation import evaluate_paper_split
 from .tasks import load_task_registry
 
@@ -34,11 +36,28 @@ def _parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--row-scope", choices=("all_valid", "through_eol"), default="all_valid")
     evaluate.add_argument("--output", type=Path, required=True)
     evaluate.add_argument("--acknowledge-test-label-exposure", action="store_true")
+    subparsers.add_parser(
+        "early-warning-contract-demo",
+        help="run a deterministic synthetic demo of the early-warning contracts",
+    )
+    subparsers.add_parser(
+        "early-warning-smoke",
+        help="deprecated alias for early-warning-contract-demo (not a Gate-3 smoke)",
+    )
     return parser
 
 
 def main() -> None:
     args = _parser().parse_args()
+    if args.command in {"early-warning-contract-demo", "early-warning-smoke"}:
+        if args.command == "early-warning-smoke":
+            print(
+                "warning: early-warning-smoke is deprecated; this is a contract demo, "
+                "not a Gate-3 smoke",
+                file=sys.stderr,
+            )
+        print(json.dumps(synthetic_early_warning_contract_demo(), indent=2, sort_keys=True))
+        return
     if args.command == "full-audit":
         if not args.acknowledge_test_label_exposure:
             raise SystemExit(

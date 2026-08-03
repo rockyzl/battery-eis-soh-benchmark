@@ -1,46 +1,139 @@
-# Battery EIS → SoH Benchmark
+# Battery Degradation Early Warning and Maintenance Decision System
 
-An independent, clean-room, cleaned-source benchmark based on the public Cambridge lithium-ion
-battery impedance study. The project asks a narrow question:
+This repository is being extended into an independent, public-data benchmark for a practical battery
+question:
 
-> Can a model estimate a held-out cell's state of health from one state-V EIS spectrum, and does EIS
-> add useful information beyond cycle number and the cell's measured initial capacity?
+> From the measurements available at a completed battery check-up, can we identify cells whose
+> degradation is becoming abnormal, estimate their future capacity trajectory or remaining life under
+> a declared use scenario, and recommend a reviewable maintenance action?
 
-This is an independent portfolio project inspired by related battery-performance work in Lu Zhang's
-scientific background. It is **not** the original Cambridge implementation and is not presented as
-Argonne work.
+The current development track uses the public KIT battery-ageing dataset. It is not a sudden-failure
+or thermal-runaway predictor. The available evidence supports research on capacity fade, impedance
+growth, accelerated degradation and capacity-defined end of life.
 
-## Why this benchmark exists
+## What the system is intended to show
 
-The source record contains more than 20,000 spectra, but they come from only 12 physical cells. A
-row-random split would allow spectra from the same cell into training and test data and can produce an
-overly optimistic result. This benchmark treats the cell—not the spectrum—as the independent group.
+At one diagnostic check-up, the eventual product view should present four connected outputs:
 
-Version 2 is intentionally bounded:
+1. **Risk:** whether the cell looks normal, uncertain or unusually degraded relative to appropriate
+   peers.
+2. **Future:** a capacity trajectory and conditional remaining-life estimate for a clearly stated
+   future-use scenario.
+3. **Evidence:** the capacity history, EIS changes, pulse/temperature/usage context and limitations
+   supporting the result.
+4. **Action:** deterministic decision support such as continue, shorten the check interval, retest,
+   derate/inspect or plan service/replacement. A person confirms operational decisions.
 
-- public CC BY 4.0 data from Zenodo record `3633835`;
-- state V only: 15-minute rest after full charge;
-- SoH percent as the primary fitted target, with absolute capacity and capacity loss retained as
-  separately reported ablations;
-- an explicit `Q0` ablation that measures the value of known cycle-0 capacity without allowing
-  future-capacity leakage;
-- original 25 °C train/test cell split plus grouped leave-one-cell-out evaluation;
-- mean, Ridge, PLS and preregistered GPR-ARD candidates;
-- immutable prediction rows, per-cell metrics and provenance manifests.
+The official KIT result archive has been recovered and checksum-bound. The current authoritative
+milestone is a paired **B versus D_CORE development-OOF run**. `B` uses capacity history and operating
+context; `D_CORE` adds current-check-up EIS features while keeping the same snapshots, held-out
+conditions, model family and weights.
 
-RUL prediction, NASA/CALCE data, dashboards, APIs and agents are not part of v1.
+The reviewed run covers 228 real cells and 3,999 capacity endpoints. Exactly 2,919 endpoints from 180
+cells have the required history, paired EIS view and exact third-follow-up (`H3`) truth. The run
+completed 54/54 planned fits and produced 23,352 OOF prediction rows, 24 aggregate metric rows, 12
+paired deltas and six retry-sensitivity records. The result is deliberately mixed: cyclic HGB shows
+an EIS-associated improvement signal, cyclic ElasticNet shows worsening, calendar is unclear, and
+profile is mixed or uncertain. There is no universal winner and no causal claim.
 
-## Current status
+This is still development evidence only: `selection_performed=false`,
+`protected_test_result=false`, `publication_ready=false` and deployment approval is absent. No
+failure, thermal-runaway, RUL or maintenance rule has been established.
 
-Data-source provenance and the clean-room parser are implemented. Baseline evaluation is an
-engineering result until the protocol is frozen, independently reviewed and executed from a clean
-commit. No metric is resume-approved yet.
+## Start here
 
-CI uses synthetic fixtures and does not download the approximately 119 MB public archives. A formal
-local data gate must run the checksum-verified download plus `audit`, which checks the 12-cell source
-inventory and 60-frequency spectra.
+- **Current evidence and next work:**
+  [`docs/live-early-warning-tasks.md`](docs/live-early-warning-tasks.md)
+- **Plain-language research report and complete metrics:**
+  [`docs/reports/battery-early-warning-project-report-zh.md`](docs/reports/battery-early-warning-project-report-zh.md)
+- **Independent post-run review:**
+  `artifacts/local/governance/kit-f1-b-capacity-sequence-v1-postrun-independent-review-20260802.md`
+  (local, intentionally ignored governance evidence)
+- **Interactive 228-cell replay:**
+  [`docs/run-fleet-replay-ui.md`](docs/run-fleet-replay-ui.md)
+- **Frozen target and evaluation protocol:**
+  [`docs/early-warning-protocol.md`](docs/early-warning-protocol.md)
 
-## Local setup
+## Why KIT is the new main track
+
+The KIT study reports 228 commercial NMC/C+SiO cells across 76 operating conditions, with three
+physical replicate cells per condition. It covers calendar ageing, controlled cyclic ageing and
+dynamic driving-profile ageing. Repeated check-ups provide comparable capacity, EIS and pulse
+measurements over cell life.
+
+The data are hierarchical:
+
+```text
+physical cell
+  -> repeated check-up
+      -> EIS spectrum at a temperature and state of charge
+          -> multiple frequency rows
+```
+
+Frequency rows and spectra are repeated observations, not independent batteries. Splits, uncertainty
+and model comparisons must therefore be based on held-out physical cells and, where required, held-out
+operating conditions. See [`docs/data-card-kit-v2.md`](docs/data-card-kit-v2.md).
+
+The central scientific comparison is not merely whether EIS predicts current SoH. It is:
+
+> Does EIS add useful early-warning information beyond measured initial capacity, capacity history,
+> elapsed exposure and known operating conditions?
+
+## Active project and frozen historical material
+
+### Only active project: KIT degradation early warning
+
+- product/science framing: risk, future trajectory/RUL, evidence and reviewable action;
+- unit of independence: physical cell;
+- prediction moment: a completed diagnostic check-up;
+- candidate outcomes: near-horizon rapid degradation, threshold crossing and deviation from matched
+  replicate cells;
+- RUL is conditional on a declared future-use scenario;
+- right-censored cells are retained;
+- paired B/D_CORE condition-held-out development OOF is complete and independently reviewed for
+  bounded display; no protected test, selection, publication approval or deployment approval has
+  occurred.
+
+The execution and review gates are in
+[`docs/early-warning-runbook.md`](docs/early-warning-runbook.md), and live status is in
+[`docs/live-early-warning-tasks.md`](docs/live-early-warning-tasks.md).
+
+For a plain-language end-to-end explanation, including Data Description, EDA, preprocessing, feature
+engineering, model selection, training/result artifact contracts and approvals, see
+[`docs/process/early-warning-development-process.md`](docs/process/early-warning-development-process.md).
+The research-seminar slide source is
+[`docs/slides/battery-early-warning-research-seminar.md`](docs/slides/battery-early-warning-research-seminar.md).
+
+The deterministic synthetic contract demo remains available for schema/policy explanation:
+
+```bash
+uv run battery-eis-soh early-warning-contract-demo
+```
+
+This command does not load KIT data or train a model. It constructs a synthetic `Q0` and four-check-up
+trajectory, calculates conventional SoH at the prediction check-up, builds the next-three-check-up
+capacity-threshold label and applies an explicitly provisional action policy whose output requires
+human review. It emits negative scientific/publication/resume status flags, including
+`formal_model_result=false`. Rapid-degradation,
+conditional-RUL, peer-reference, grouped-split and metric contracts are covered by unit tests, but the
+CLI does not execute them. The reviewed real-data paired OOF run is a separate governed lineage; this
+synthetic command is not a shortcut to it.
+
+### Frozen historical material: Cambridge EIS -> SoH benchmark
+
+The existing clean-room Cambridge benchmark remains available as a separate historical lineage. It
+asks whether one state-V EIS spectrum can estimate held-cell SoH, using 12 physical cells from Zenodo
+record `3633835`. Its v2 protocol uses SoH percent, explicit cycle-0 capacity (`Q0`) ablations,
+cell-held-out evaluation and a protected fixed test.
+
+It is not an active fallback project. No new Cambridge or CALCE training, UI, report or publication
+work is authorized. The accepted scope decision is recorded in
+[`docs/decisions/kit-only-project-scope-2026-08-02.md`](docs/decisions/kit-only-project-scope-2026-08-02.md).
+
+That work must not be relabeled as KIT early-warning evidence. Its engineering evaluator is useful for
+plumbing checks only and cannot produce a scientific or resume-approved result.
+
+## Local setup for the existing Cambridge pipeline
 
 ```bash
 uv sync --extra dev
@@ -55,32 +148,31 @@ uv run battery-eis-soh engineering-evaluate \
   --row-scope all_valid \
   --output artifacts/soh-primary-smoke \
   --acknowledge-test-label-exposure
-
-uv run battery-eis-soh engineering-evaluate \
-  --data-root "data/raw/extracted" \
-  --task-id T2 \
-  --row-scope all_valid \
-  --output artifacts/q0-capacity-ablation-smoke \
-  --acknowledge-test-label-exposure
 ```
 
-This command is an engineering smoke and currently loads the historical fixed-test labels. It is not
-the formal nested-selection runner and cannot produce a scientific or resume-approved result.
-The separate `selection-audit` path opens only `25C01`–`25C04`; its tests prove that fixed-test
-capacity and `Q0` files are not parsed.
+These commands operate on the Cambridge lineage, not the KIT early-warning track. KIT execution
+commands will be documented only after the source audit and CLI contract are implemented and
+reviewed.
 
-Download instructions and official checksums are in [`docs/data-card.md`](docs/data-card.md).
+## Source and claim boundaries
 
-## Claim boundary
+- KIT result data: <https://publikationen.bibliothek.kit.edu/1000169196>
+- KIT data descriptor: <https://www.nature.com/articles/s41597-024-03831-x>
+- KIT example scripts: <https://github.com/energystatusdata/bat-age-data-scripts>
+- Cambridge source: <https://doi.org/10.5281/zenodo.3633835>
 
-Allowed after independent verification:
+Both public datasets are reported as CC BY 4.0. Dataset files are not relicensed as project code.
 
-> Built the public-data ingestion, audit and engineering evaluation pipeline for an independent,
-> leakage-resistant Li-ion EIS/capacity benchmark with cell-held-out validation.
+Allowed now:
+
+> Building a leakage-resistant, cell-grouped public-data pipeline for battery degradation early
+> warning, conditional RUL research and auditable maintenance decision support.
 
 Not allowed:
 
-- claiming authorship of the original dataset or paper;
-- describing this as work performed at Argonne;
-- quoting a metric that is not linked to a reviewed immutable artifact;
-- treating thousands of spectra as thousands of independent batteries.
+- claiming authorship of either source dataset or its original research;
+- describing independent reconstruction as work performed at Argonne, KIT or Cambridge;
+- calling spectra or frequency rows independent batteries;
+- claiming thermal-runaway or sudden catastrophic-failure prediction;
+- quoting a metric not tied to an independently reviewed immutable artifact;
+- presenting a conditional RUL estimate or maintenance recommendation as experimental truth.

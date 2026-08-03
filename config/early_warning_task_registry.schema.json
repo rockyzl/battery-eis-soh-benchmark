@@ -1,0 +1,724 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciencesloop.com/schemas/battery-eis-soh/early-warning-task-registry-v1.schema.json",
+  "title": "KIT battery degradation early-warning task registry v1",
+  "description": "A deliberately strict schema. It makes the v1 scientific and safety invariants executable instead of accepting arbitrary registry variants.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "schema_version",
+    "protocol_lineage",
+    "status",
+    "source",
+    "snapshot_contract",
+    "capacity_contract",
+    "input_blocks",
+    "feature_views",
+    "outcomes",
+    "validation",
+    "model_selection",
+    "ensemble_gate",
+    "metrics",
+    "action_policy",
+    "formal_gate_states",
+    "formal_gates",
+    "claim_boundary"
+  ],
+  "properties": {
+    "$schema": {"const": "./early_warning_task_registry.schema.json"},
+    "schema_version": {"const": 1},
+    "protocol_lineage": {"const": "kit-early-warning-v0"},
+    "status": {"const": "draft_formal_training_blocked"},
+    "source": {
+      "type": "object",
+      "required": [
+        "dataset",
+        "official_record",
+        "descriptor_doi",
+        "license",
+        "expected_physical_cells",
+        "expected_condition_groups",
+        "replicates_per_condition",
+        "cell_count_invariant",
+        "ageing_modes"
+      ],
+      "properties": {
+        "dataset": {"type": "string", "minLength": 1},
+        "official_record": {"type": "string", "format": "uri"},
+        "descriptor_doi": {"type": "string", "format": "uri"},
+        "license": {"const": "CC BY 4.0"},
+        "expected_physical_cells": {"const": 228},
+        "expected_condition_groups": {"const": 76},
+        "replicates_per_condition": {"const": 3},
+        "cell_count_invariant": {
+          "const": "expected_condition_groups * replicates_per_condition == expected_physical_cells"
+        },
+        "ageing_modes": {"const": ["calendar", "cyclic", "profile"]}
+      },
+      "additionalProperties": false
+    },
+    "snapshot_contract": {
+      "type": "object",
+      "required": [
+        "unit",
+        "timestamp_rule",
+        "input_time_boundary",
+        "outcome_time_boundary",
+        "primary_horizon",
+        "insufficient_followup"
+      ],
+      "properties": {
+        "unit": {"type": "string", "minLength": 1},
+        "timestamp_rule": {"type": "string", "minLength": 1},
+        "input_time_boundary": {"const": "measurement_completion_time <= snapshot_time"},
+        "outcome_time_boundary": {"const": "measurement_completion_time > snapshot_time"},
+        "primary_horizon": {
+          "type": "object",
+          "required": ["type", "value", "status"],
+          "properties": {
+            "type": {"const": "completed_checkups"},
+            "value": {"const": 3},
+            "status": {"const": "fixed_by_protocol"}
+          },
+          "additionalProperties": false
+        },
+        "insufficient_followup": {"const": "censored_not_negative"}
+      },
+      "additionalProperties": false
+    },
+    "capacity_contract": {
+      "type": "object",
+      "required": [
+        "q0",
+        "conventional_soh_percent_formula",
+        "source_soh_cap_role",
+        "source_soh_imp_role"
+      ],
+      "properties": {
+        "q0": {
+          "type": "object",
+          "required": [
+            "definition",
+            "status",
+            "provenance_required",
+            "required_provenance_fields",
+            "missing_provenance_behavior",
+            "forbidden"
+          ],
+          "properties": {
+            "definition": {"type": "string", "minLength": 1},
+            "status": {"const": "candidate_pending_source_alignment_review"},
+            "provenance_required": {"const": true},
+            "required_provenance_fields": {
+              "const": [
+                "source_archive",
+                "source_member_or_file",
+                "physical_cell_id",
+                "source_row_locator",
+                "measurement_timestamp",
+                "endpoint_selection_rule",
+                "raw_value",
+                "unit",
+                "source_manifest_hash"
+              ]
+            },
+            "missing_provenance_behavior": {"const": "snapshot_ineligible_fail_closed"},
+            "forbidden": {
+              "type": "array",
+              "minItems": 3,
+              "items": {"type": "string", "minLength": 1}
+            }
+          },
+          "additionalProperties": false
+        },
+        "conventional_soh_percent_formula": {
+          "const": "100 * current_standardized_checkup_discharge_capacity / Q0"
+        },
+        "source_soh_cap_role": {"const": "audit_metadata_only"},
+        "source_soh_imp_role": {"const": "forbidden_as_feature_or_label"}
+      },
+      "additionalProperties": false
+    },
+    "input_blocks": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/inputBlockA"},
+        {"$ref": "#/$defs/inputBlockContext"},
+        {"$ref": "#/$defs/inputBlockEis"},
+        {"$ref": "#/$defs/inputBlockAux"}
+      ],
+      "items": false
+    },
+    "feature_views": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {"$ref": "#/$defs/viewA"},
+        {"$ref": "#/$defs/viewB"},
+        {"$ref": "#/$defs/viewC"},
+        {"$ref": "#/$defs/viewDCore"},
+        {"$ref": "#/$defs/viewDFull"}
+      ],
+      "items": false
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/outcomeO1"},
+        {"$ref": "#/$defs/outcomeO2"},
+        {"$ref": "#/$defs/outcomeO3"},
+        {"$ref": "#/$defs/outcomeR1"}
+      ],
+      "items": false
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "primary",
+        "development_nested_folds",
+        "secondary",
+        "temporal_rule",
+        "prohibited_splits",
+        "temperature_extrapolation"
+      ],
+      "properties": {
+        "primary": {
+          "type": "object",
+          "required": [
+            "name",
+            "outer_group",
+            "inner_group",
+            "stratification",
+            "split_construction",
+            "event_support_use"
+          ],
+          "properties": {
+            "name": {"const": "unseen_condition_generalization"},
+            "outer_group": {"const": "condition_id_all_three_replicates"},
+            "inner_group": {"const": "condition_id"},
+            "stratification": {"const": ["ageing_mode", "temperature"]},
+            "split_construction": {"type": "string", "minLength": 1},
+            "event_support_use": {"const": "prohibited"}
+          },
+          "additionalProperties": false
+        },
+        "development_nested_folds": {
+          "type": "object",
+          "required": [
+            "group",
+            "stratification_after_development_label_audit",
+            "protected_outcomes_available"
+          ],
+          "properties": {
+            "group": {"const": "condition_id_all_three_replicates"},
+            "stratification_after_development_label_audit": {
+              "const": ["ageing_mode", "temperature", "event_support_if_feasible"]
+            },
+            "protected_outcomes_available": {"const": false}
+          },
+          "additionalProperties": false
+        },
+        "secondary": {
+          "type": "object",
+          "required": ["name", "group", "peer_features", "primary_unseen_condition_feature_use"],
+          "properties": {
+            "name": {"const": "known_condition_held_replicate_transfer"},
+            "group": {"const": "physical_cell_id"},
+            "peer_features": {
+              "const": "allowed_only_under_declared_fleet_monitoring_assumption"
+            },
+            "primary_unseen_condition_feature_use": {"const": "prohibited"}
+          },
+          "additionalProperties": false
+        },
+        "temporal_rule": {"const": "all features at or before snapshot; labels strictly after snapshot"},
+        "prohibited_splits": {
+          "type": "array",
+          "minItems": 3,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "temperature_extrapolation": {
+          "const": "secondary_leave_one_temperature_out_robustness_only"
+        }
+      },
+      "additionalProperties": false
+    },
+    "model_selection": {
+      "type": "object",
+      "required": [
+        "binary_candidate_order",
+        "survival_candidate_order",
+        "fold_local_operations",
+        "simplicity_rule",
+        "primary_incremental_contrast",
+        "valid_feature_view_references"
+      ],
+      "properties": {
+        "binary_candidate_order": {
+          "const": [
+            "prevalence_probability",
+            "capacity_slope_rule",
+            "elastic_net_logistic",
+            "constrained_gradient_boosting"
+          ]
+        },
+        "survival_candidate_order": {
+          "const": [
+            "mode_condition_survival_reference",
+            "regularized_cox",
+            "regularized_aft",
+            "tree_survival_if_independently_eligible"
+          ]
+        },
+        "fold_local_operations": {
+          "const": [
+            "imputation",
+            "scaling",
+            "constant_and_correlation_screening",
+            "supervised_variable_selection",
+            "hyperparameter_selection",
+            "probability_or_survival_calibration",
+            "action_threshold_selection",
+            "ensemble_weight_selection"
+          ]
+        },
+        "simplicity_rule": {
+          "const": "select complexity only when paired held-condition improvement exceeds one standard error without material calibration, worst-mode, missed-event or false-alert deterioration"
+        },
+        "primary_incremental_contrast": {"const": "D_CORE versus B"},
+        "valid_feature_view_references": {"const": ["A", "B", "C", "D_CORE", "D_FULL"]}
+      },
+      "additionalProperties": false
+    },
+    "ensemble_gate": {
+      "type": "object",
+      "required": [
+        "default",
+        "minimum_complete_same_outcome_base_models",
+        "requirements",
+        "protected_evaluation_may_create_or_rescue_ensemble"
+      ],
+      "properties": {
+        "default": {"const": "ineligible"},
+        "minimum_complete_same_outcome_base_models": {"const": 3},
+        "requirements": {
+          "const": [
+            "held-condition error diversity",
+            "inner-fold-only nonnegative weights summing to one",
+            "recalibration without outer or protected outcomes",
+            "paired improvement greater than one standard error",
+            "no material deterioration in worst-mode, missed-event or false-alert metrics"
+          ]
+        },
+        "protected_evaluation_may_create_or_rescue_ensemble": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["binary", "survival", "uncertainty_unit", "uncensored_rul_mae_role"],
+      "properties": {
+        "binary": {
+          "const": [
+            "condition_macro_pr_auc",
+            "roc_auc",
+            "recall_at_frozen_alert_budget",
+            "precision_at_frozen_alert_budget",
+            "missed_event_rate",
+            "false_alerts_per_cell_checkup",
+            "brier_score",
+            "calibration_slope_and_intercept",
+            "event_level_early_warning_lead_time"
+          ]
+        },
+        "survival": {
+          "const": [
+            "censoring_aware_integrated_brier_score",
+            "concordance",
+            "time_dependent_discrimination",
+            "survival_calibration_at_registered_horizons",
+            "prediction_interval_coverage"
+          ]
+        },
+        "uncertainty_unit": {"const": "condition_group"},
+        "uncensored_rul_mae_role": {"const": "descriptive_only"}
+      },
+      "additionalProperties": false
+    },
+    "action_policy": {
+      "type": "object",
+      "required": [
+        "status",
+        "production_defaults_allowed",
+        "demo_policy_status",
+        "human_review_and_acknowledgement_required_for_all_levels",
+        "explicit_human_approval_required_for_orange_red_physical_changes",
+        "rul_policy_scope",
+        "red_eligibility",
+        "model_probability_without_observed_confirmed_threshold_max_level",
+        "levels",
+        "invalid_data_can_directly_trigger_red",
+        "thermal_runaway_interpretation"
+      ],
+      "properties": {
+        "status": {"const": "thresholds_blocked_pending_development_only_decision_analysis"},
+        "production_defaults_allowed": {"const": false},
+        "demo_policy_status": {"const": "provisional_demo_only_not_operationally_validated"},
+        "human_review_and_acknowledgement_required_for_all_levels": {"const": true},
+        "explicit_human_approval_required_for_orange_red_physical_changes": {"const": true},
+        "rul_policy_scope": {
+          "const": "separate thresholds by ageing mode, exposure unit and declared future-use scenario"
+        },
+        "red_eligibility": {
+          "const": "observed_registered_capacity_threshold_and_valid_repeat_confirmation"
+        },
+        "model_probability_without_observed_confirmed_threshold_max_level": {
+          "const": "orange_or_retest"
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {"$ref": "#/$defs/actionGreen"},
+            {"$ref": "#/$defs/actionYellow"},
+            {"$ref": "#/$defs/actionOrange"},
+            {"$ref": "#/$defs/actionRed"}
+          ],
+          "items": false
+        },
+        "invalid_data_can_directly_trigger_red": {"const": false},
+        "thermal_runaway_interpretation": {"const": "prohibited"}
+      },
+      "additionalProperties": false
+    },
+    "formal_gate_states": {
+      "const": {
+        "formal_model_search": "blocked",
+        "protected_evaluation": "blocked",
+        "production_action_policy": "blocked",
+        "publication_claim": "blocked",
+        "resume_claim": "blocked"
+      }
+    },
+    "formal_gates": {
+      "const": [
+        "source_inventory_and_license_review",
+        "snapshot_q0_exposure_alignment_review",
+        "development_only_outcome_prevalence_threshold_and_censoring_review",
+        "protocol_registry_and_split_hash_freeze",
+        "leakage_and_protected_evaluator_review",
+        "bounded_real_backend_smoke_review",
+        "nested_development_selection_review",
+        "independent_oof_metric_calibration_and_policy_review",
+        "winner_calibration_and_action_threshold_freeze",
+        "separate_protected_evaluation_authorization",
+        "independent_result_and_reproducibility_review",
+        "separate_publication_and_resume_claim_review"
+      ]
+    },
+    "claim_boundary": {
+      "type": "object",
+      "required": ["supported", "unsupported"],
+      "properties": {
+        "supported": {
+          "const": [
+            "capacity degradation risk",
+            "capacity-threshold crossing under a declared horizon",
+            "conditional remaining useful exposure",
+            "peer-trajectory deviation with stated limitations",
+            "human-reviewed maintenance decision support"
+          ]
+        },
+        "unsupported": {
+          "const": [
+            "thermal runaway prediction",
+            "sudden catastrophic field failure prediction",
+            "unconditional RUL across arbitrary future use",
+            "autonomous replacement or safety-critical control"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "nonEmptyFields": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "inputBlockA": {
+      "type": "object",
+      "required": ["id", "name", "required", "fields"],
+      "properties": {
+        "id": {"const": "A"},
+        "name": {"const": "capacity_history"},
+        "required": {"const": true},
+        "fields": {"$ref": "#/$defs/nonEmptyFields"}
+      },
+      "additionalProperties": false
+    },
+    "inputBlockContext": {
+      "type": "object",
+      "required": ["id", "name", "required", "fields"],
+      "properties": {
+        "id": {"const": "B_CONTEXT"},
+        "name": {"const": "use_and_environment"},
+        "required": {"const": true},
+        "fields": {"$ref": "#/$defs/nonEmptyFields"}
+      },
+      "additionalProperties": false
+    },
+    "inputBlockEis": {
+      "type": "object",
+      "required": ["id", "name", "required", "primary_view", "fields", "prohibited_fields"],
+      "properties": {
+        "id": {"const": "C_EIS"},
+        "name": {"const": "current_checkup_eis"},
+        "required": {"const": false},
+        "primary_view": {"type": "string", "minLength": 1},
+        "fields": {"$ref": "#/$defs/nonEmptyFields"},
+        "prohibited_fields": {"const": ["source_soh_imp"]}
+      },
+      "additionalProperties": false
+    },
+    "inputBlockAux": {
+      "type": "object",
+      "required": ["id", "name", "required", "status", "fields"],
+      "properties": {
+        "id": {"const": "D_AUX"},
+        "name": {"const": "pulse_temperature_and_quality_history"},
+        "required": {"const": false},
+        "status": {"const": "blocked_pending_source_audit"},
+        "fields": {"$ref": "#/$defs/nonEmptyFields"}
+      },
+      "additionalProperties": false
+    },
+    "viewA": {"$ref": "#/$defs/viewAExact"},
+    "viewAExact": {
+      "type": "object",
+      "required": ["id", "blocks", "question"],
+      "properties": {
+        "id": {"const": "A"},
+        "blocks": {"const": ["A"]},
+        "question": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "viewB": {
+      "type": "object",
+      "required": ["id", "blocks", "question"],
+      "properties": {
+        "id": {"const": "B"},
+        "blocks": {"const": ["A", "B_CONTEXT"]},
+        "question": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "viewC": {
+      "type": "object",
+      "required": ["id", "blocks", "question"],
+      "properties": {
+        "id": {"const": "C"},
+        "blocks": {"const": ["C_EIS", "B_CONTEXT"]},
+        "question": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "viewDCore": {
+      "type": "object",
+      "required": ["id", "blocks", "question"],
+      "properties": {
+        "id": {"const": "D_CORE"},
+        "blocks": {"const": ["A", "B_CONTEXT", "C_EIS"]},
+        "question": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "viewDFull": {
+      "type": "object",
+      "required": ["id", "blocks", "question", "missing_optional_block_behavior"],
+      "properties": {
+        "id": {"const": "D_FULL"},
+        "blocks": {"const": ["A", "B_CONTEXT", "C_EIS", "D_AUX"]},
+        "question": {"type": "string", "minLength": 1},
+        "missing_optional_block_behavior": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "validViews": {
+      "const": ["A", "B", "C", "D_CORE", "D_FULL"]
+    },
+    "outcomeO1": {
+      "type": "object",
+      "required": [
+        "id", "family", "type", "eligibility", "event", "event_observation",
+        "true_crossing_time", "threshold_soh_percent", "threshold_status", "horizon_checkups",
+        "non_event_requirement", "primary_metric", "eligible_feature_views"
+      ],
+      "properties": {
+        "id": {"const": "O1_THRESHOLD_80_H3"},
+        "family": {"const": "future_threshold_crossing"},
+        "type": {"const": "binary_event_with_censoring"},
+        "eligibility": {"const": "snapshot conventional SoH is above threshold"},
+        "event": {"type": "string", "minLength": 1},
+        "event_observation": {"const": "discrete_completed_checkup_index"},
+        "true_crossing_time": {
+          "const": "interval_censored_between_last_observed_above_and_first_observed_at_or_below"
+        },
+        "threshold_soh_percent": {"const": 80.0},
+        "threshold_status": {"const": "candidate_pending_development_label_review"},
+        "horizon_checkups": {"const": 3},
+        "non_event_requirement": {"const": "complete horizon follow-up"},
+        "primary_metric": {"const": "condition_macro_pr_auc"},
+        "eligible_feature_views": {"$ref": "#/$defs/validViews"}
+      },
+      "additionalProperties": false
+    },
+    "outcomeO2": {
+      "type": "object",
+      "required": [
+        "id", "family", "type", "event", "loss_threshold_percentage_points", "threshold_status",
+        "horizon_checkups", "non_event_requirement", "primary_metric", "eligible_feature_views"
+      ],
+      "properties": {
+        "id": {"const": "O2_RAPID_LOSS_5PP_H3"},
+        "family": {"const": "rapid_future_degradation"},
+        "type": {"const": "binary_event_with_censoring"},
+        "event": {
+          "const": "snapshot conventional SoH minus conventional SoH at the third future completed check-up is at least threshold"
+        },
+        "loss_threshold_percentage_points": {"const": 5.0},
+        "threshold_status": {
+          "const": "candidate_pending_development_noise_and_prevalence_review"
+        },
+        "horizon_checkups": {"const": 3},
+        "non_event_requirement": {"const": "complete horizon follow-up"},
+        "primary_metric": {"const": "condition_macro_pr_auc"},
+        "eligible_feature_views": {"$ref": "#/$defs/validViews"}
+      },
+      "additionalProperties": false
+    },
+    "outcomeO3": {
+      "type": "object",
+      "required": [
+        "id", "family", "type", "event", "deviation_definition", "status", "horizon_checkups",
+        "primary_feature_policy", "secondary_feature_policy", "label_side_peer_role",
+        "primary_metric", "eligible_feature_views"
+      ],
+      "properties": {
+        "id": {"const": "O3_PEER_DEVIATION_ONSET_H3"},
+        "family": {"const": "future_peer_deviation_onset"},
+        "type": {"const": "binary_event_with_censoring"},
+        "event": {"type": "string", "minLength": 1},
+        "deviation_definition": {"type": "string", "minLength": 1},
+        "status": {"const": "exploratory_due_to_two_peer_reference_cells"},
+        "horizon_checkups": {"const": 3},
+        "primary_feature_policy": {"const": "peer-derived features prohibited"},
+        "secondary_feature_policy": {
+          "const": "same-condition leave-target-out peer features allowed only for declared fleet-monitoring deployment analysis"
+        },
+        "label_side_peer_role": {
+          "const": "allowed with held-out peer lineage and no feedback into fitting"
+        },
+        "primary_metric": {"const": "condition_macro_pr_auc"},
+        "eligible_feature_views": {"$ref": "#/$defs/validViews"}
+      },
+      "additionalProperties": false
+    },
+    "outcomeR1": {
+      "type": "object",
+      "required": [
+        "id", "family", "type", "event", "event_representation", "threshold_soh_percent",
+        "threshold_status", "time_scale_by_mode", "future_use_assumption",
+        "interval_and_right_censoring", "primary_metric", "eligible_feature_views"
+      ],
+      "properties": {
+        "id": {"const": "R1_CONDITIONAL_RUL_80"},
+        "family": {"const": "conditional_remaining_useful_exposure"},
+        "type": {"const": "interval_or_right_censored_time_to_observed_event"},
+        "event": {"type": "string", "minLength": 1},
+        "event_representation": {
+          "type": "object",
+          "required": [
+            "observed_event_index", "interval_lower_bound", "interval_upper_bound",
+            "right_censor_bound", "exact_continuous_crossing_claim"
+          ],
+          "properties": {
+            "observed_event_index": {"type": "string", "minLength": 1},
+            "interval_lower_bound": {"type": "string", "minLength": 1},
+            "interval_upper_bound": {"type": "string", "minLength": 1},
+            "right_censor_bound": {"type": "string", "minLength": 1},
+            "exact_continuous_crossing_claim": {"const": "prohibited"}
+          },
+          "additionalProperties": false
+        },
+        "threshold_soh_percent": {"const": 80.0},
+        "threshold_status": {"const": "candidate_pending_development_event_review"},
+        "time_scale_by_mode": {
+          "const": {
+            "calendar": "elapsed_days",
+            "cyclic": "equivalent_full_cycles",
+            "profile": "equivalent_full_cycles_with_traceable_distance_secondary"
+          }
+        },
+        "future_use_assumption": {
+          "const": "continuation_of_declared_observed_operating_condition"
+        },
+        "interval_and_right_censoring": {"const": "required"},
+        "primary_metric": {"const": "censoring_aware_integrated_brier_score"},
+        "eligible_feature_views": {"$ref": "#/$defs/validViews"}
+      },
+      "additionalProperties": false
+    },
+    "actionGreen": {"$ref": "#/$defs/actionGreenExact"},
+    "actionGreenExact": {
+      "type": "object",
+      "required": ["id", "meaning"],
+      "properties": {
+        "id": {"const": "green"},
+        "meaning": {"const": "continue normal operation and scheduled monitoring"}
+      },
+      "additionalProperties": false
+    },
+    "actionYellow": {
+      "type": "object",
+      "required": ["id", "meaning"],
+      "properties": {
+        "id": {"const": "yellow"},
+        "meaning": {"const": "shorten check interval or repeat diagnostic; may also represent invalid data"}
+      },
+      "additionalProperties": false
+    },
+    "actionOrange": {
+      "type": "object",
+      "required": ["id", "meaning"],
+      "properties": {
+        "id": {"const": "orange"},
+        "meaning": {
+          "const": "inspect, retest, consider derating, and plan maintenance or replacement; probability alone cannot escalate beyond this level"
+        }
+      },
+      "additionalProperties": false
+    },
+    "actionRed": {
+      "type": "object",
+      "required": ["id", "meaning"],
+      "properties": {
+        "id": {"const": "red"},
+        "meaning": {
+          "const": "human service or replacement review only after an observed registered capacity threshold is confirmed by a valid repeat measurement"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -5,10 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "battery-eis-soh-benchmark"
 version = "0.1.0"
-description = "Leakage-resistant clean-room benchmark for battery SoH estimation from EIS"
+description = "Leakage-resistant benchmark for battery degradation early warning and conditional RUL"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "jsonschema>=4.23,<5",
   "numpy>=2.1,<3",
   "scikit-learn>=1.6,<2",
 ]
@@ -34,5 +35,5 @@ line-length = 100
 target-version = "py312"
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*"]
+module = ["jsonschema.*", "sklearn.*"]
 ignore_missing_imports = true
