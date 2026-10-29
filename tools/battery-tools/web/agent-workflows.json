@@ -52,6 +52,7 @@
         "inspect_data",
         "KK reference review",
         "fit_eis: CPE / RC comparison",
+        "compare_eis_hypotheses: fixed / R0-only / full refit",
         "intermediate interpretation",
         "repeat or metadata check"
       ],
@@ -132,20 +133,20 @@
         "en": "Are differential-capacity features changing?",
         "zh": "dQ/dV 或 dV/dQ 的特征是否变化？"
       },
-      "status": "research",
+      "status": "live",
       "inputs": {
         "en": "Suitable constant-current half-cycles with voltage/capacity resolution and current/temperature metadata.",
         "zh": "需要合适的恒流半周期，足够的电压/容量分辨率，以及电流、温度记录。"
       },
       "tools": [
-        "segment and current checks",
-        "cellpy ICA / DVA or guarded local CSV tool",
-        "smoothing and grid sensitivity",
-        "peak comparison"
+        "inspect_data",
+        "analyze_dqdv: guarded local CSV calculation",
+        "intermediate assessment",
+        "preprocessing and follow-up review"
       ],
       "gate": {
-        "en": "Local CSV dQ/dV is available in the separate data tab; this conversation is not connected to uploaded data. Peaks alone do not quantify LLI/LAM.",
-        "zh": "独立数据页已有受检查的 CSV dQ/dV；本对话尚未接入上传数据。单凭峰位变化不能定量给出 LLI/LAM。"
+        "en": "Selected local cycling CSV is connected to chat after consent for computed summaries. This adapter is not the full cellpy ICA/DVA package. Extrema are preprocessing-dependent; no unique LLI/LAM claim.",
+        "zh": "所选本地循环 CSV 在同意发送计算摘要后可用于对话。此适配器不是完整 cellpy ICA/DVA；极值依赖预处理，不能指定唯一 LLI/LAM。"
       },
       "sources": [
         {

@@ -68,8 +68,17 @@ PyBOP serves a different action: fitting or inference for selected model paramet
 
 ## Implementation status and next integration order
 
-**Executable now:** connected public inventory; CPE numerical fit in a browser worker; existing RC/CPE and KK reference results; grouped future-capacity prediction and baselines; analytic one-RC pulse/rest forward simulation with editable parameters. The separate local-CSV tab provides guarded dQ/dV and EIS fitting. It is not yet connected to the chat and private files are not sent to the model.
+**Executable now:** connected public inventory; CPE numerical fit in a browser worker; existing RC/CPE and KK reference results; grouped future-capacity prediction and baselines; analytic one-RC pulse/rest forward simulation with editable parameters. The chat now accepts researcher-selected local EIS or constant-current cycling CSVs, with explicit consent before inventory/computed summaries are sent to the model. Raw CSV rows remain in the browser. This bounded adapter is not a universal vendor-native parser or full cellpy ICA/DVA integration.
 
 **Researched, not executed by this chat:** vendor-native readers, DRT, pulse resistance, GITT/PITT diffusion models, full ICA/DVA/DMA workflows and PyBaMM/PyBOP. The first follow-on adapter should depend on the actual Argonne export available: CC cycling → local-CSV/ICA; timed pulses → pulse resistance; genuine GITT/PITT → protocol-specific transport analysis. No package is installed or called merely to decorate the demo.
 
 Before promoting any adapter: verify its license and pinned version, compare against an independent calculation on suitable data, define rejected inputs and test researcher edits, failure recovery and source/result provenance. Scientific usefulness requires expert review and comparison with a fixed workflow, beyond successful software execution.
+
+
+## 29 October update: executable research case and local-data intake
+
+The new `compare_eis_hypotheses` action compares unchanged early parameters, an analytic R0-only adjustment and a full five-parameter refit on the same later-spectrum points/weights. The public 25C05 index1→275 case returns33.3136%,26.7035% and6.2455% weighted RMS respectively. These are descriptive in-sample residuals; added flexibility can improve a fit and does not identify a unique mechanism. The plain-language account is in [agent-story.md](agent-story.md).
+
+Local CSV intake accepts explicit EIS or cycling columns, at most2MB/25,000rows/100cell-index groups. It rejects duplicate EIS frequencies and malformed/missing numeric values. Local EIS has no assumed KK reference or capacity labels; cross-spectrum comparison requires equal frequency grids. The `analyze_dqdv` action checks current/voltage continuity before20mV local-linear differentiation, returning derivative extrema and a bounded curve summary. These extrema are not assigned transition or degradation identities.
+
+Selecting a new file starts a separate data context. Previous conclusions from a different file are not fed into the new task. No raw CSV rows are sent to the model or committed to the public site; explicit product consent gates inventory and derived-output transmission. This is an implemented adapter, not a claim that Lu's historical Argonne raw files have been obtained.
