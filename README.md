@@ -64,3 +64,11 @@ Not allowed:
 - describing this as work performed at Argonne;
 - quoting a metric that is not linked to a reviewed immutable artifact;
 - treating thousands of spectra as thousands of independent batteries.
+
+
+## Battery research tools demo
+
+An additive executable module now lives in [tools/battery-tools](tools/battery-tools/README.md):
+EIS checks/fitting, grouped future-capacity prediction, CSV analysis and dQ/dV.
+Its exploratory public-data results and broader agent proposal are separate from the
+original preregistered benchmark.
