@@ -38,3 +38,5 @@ PYBAMM_DISABLE_TELEMETRY=true python reproduce.py
 ```
 
 Results include full curves, individual cell metrics, file hashes, and SVG/PNG plots. `agent-validation.mjs` independently recalculates the same metrics in JavaScript; all six paired Python/JS comparisons agree within 1e-8 mV.
+
+Live model QA also observed inaccurate numeric paraphrases and unsupported cell-specific interpretations. A separate web/API revision marks prose for review, disallows cell selection in this three-cell aggregate case, and checks explicit mV claims against returned aggregate metrics. This conservative check is not verification of physical reasoning. Exact tool tables remain the numerical evidence.
