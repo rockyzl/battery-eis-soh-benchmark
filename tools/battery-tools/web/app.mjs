@@ -136,7 +136,7 @@ const translations={
   'Files stay in this browser session. This version reads the CSV schemas below; vendor-native files need a verified adapter.':'文件保留在本次浏览器会话中。此版本支持以下 CSV 格式；仪器原生文件需要验证过的适配器。',
   'Inspect measured Nyquist curves and a model-dependent fit. Three reference spectra include linear-KK checks and RC-versus-CPE fits computed with impedance.py.':'查看实测 Nyquist 曲线及依赖模型的拟合。三个参考谱包含 impedance.py 计算的线性 KK 检查及 RC/CPE 电路比较。'
 };
-if(zh){document.documentElement.lang='zh-CN';const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){const key=node.textContent.trim();if(translations[key])node.textContent=node.textContent.replace(key,translations[key]);}$('hero').innerHTML='电化学阻抗谱分析<br>与放电容量衰减预测';$('lead').textContent='关联 12 个 LCO/石墨电池的 State-V 阻抗谱与放电容量诊断，比较等效电路拟合，并检验跨电池、跨温度条件下的未来容量预测。';}
+if(zh){document.documentElement.lang='zh-CN';const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){const key=node.textContent.trim();if(translations[key])node.textContent=node.textContent.replace(key,translations[key]);}$('hero').innerHTML='电池实验数据分析 Agent';$('lead').textContent='输入电池研究任务，由模型选择分析工具、检查计算结果并形成结论。首个案例使用实测 EIS；预测仅在任务需要时调用。';}
 toolsTable();
 try{const response=await fetch(new URL('./data.json',import.meta.url));if(!response.ok)throw Error('Dataset HTTP '+response.status);data=await response.json();
   if(data.schema!=='sciencesloop.battery-demo.v1')throw Error('Unsupported dataset schema');

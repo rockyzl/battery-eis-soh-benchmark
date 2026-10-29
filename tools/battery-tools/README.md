@@ -80,3 +80,10 @@ prediction require subsequent adapters.
 
 See tooling-survey.md for candidate integrations and the judgment each method requires.
 
+
+
+## Live research agent, 2026-10-29
+
+The web entry now includes a genuine model-directed tool loop through the SciencesLoop battery-agent API. The model selects inspect_data, fit_eis, or optional predict_capacity; deterministic tools return calculated outputs; the model reviews outputs and finishes with a conclusion and next-step suggestions. Current live model verified: gpt-4.1-mini-2025-04-14. No credentials are in browser source. Previous-round conclusions and measured fit results feed a manually started next iteration. This is iterative open-loop research support, not autonomous physical control or unrestricted code execution. The older deterministic workbench remains as an inspectable tool surface.
+
+Live checks completed: a task explicitly excluding prediction selected inspect_data, fit_eis, finish. A second diagnostic-stage task selected inspect_data, fit_eis, fit_eis, finish. Review caught conflation of KK consistency residual and circuit-fit residual; the model instructions now require separate metric comparisons, diagnostic-index terminology, and a concrete next suggestion. Neither check establishes general scientific reliability. Uploaded private data are not connected to this agent version. Task text and public-data tool outputs are sent to the model backend.
