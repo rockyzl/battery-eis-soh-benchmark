@@ -1,0 +1,26 @@
+[
+  {
+    "rate_c": 0.5,
+    "dn": 3.3e-14,
+    "rest_default_vs_refined_rmse_mv": 0.424228713760008,
+    "cutoff_shift_s": -0.17866040743683698
+  },
+  {
+    "rate_c": 0.5,
+    "dn": 1.3e-14,
+    "rest_default_vs_refined_rmse_mv": 0.7693244165001434,
+    "cutoff_shift_s": -0.34206580796490016
+  },
+  {
+    "rate_c": 1.5,
+    "dn": 3.3e-14,
+    "rest_default_vs_refined_rmse_mv": 0.6228380020487683,
+    "cutoff_shift_s": -0.1893511753405619
+  },
+  {
+    "rate_c": 1.5,
+    "dn": 6.3e-14,
+    "rest_default_vs_refined_rmse_mv": 0.6259667117073873,
+    "cutoff_shift_s": -0.15680849866976132
+  }
+]
