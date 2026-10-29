@@ -13,9 +13,9 @@ preregistered protocol, model-selection claims, or data-alignment rules.
 - Compare predictions with training-mean and persistence baselines, report per-cell error, inspect temperature transfer, and export predictions/model provenance.
 - Check constant-current cycling CSV segments before calculating dQ/dV with a local-linear 20 mV window.
 
-The browser workflow is deterministic. It does not run a live LLM, regenerate code at runtime,
-control instruments, or establish a degradation mechanism. The broader agent-development
-proposal is recorded separately from these implemented capabilities.
+The production conversation uses a live language model to recommend analysis actions, summarizes actual returned evidence and accepts researcher feedback. Each tool is proposed before execution; researchers can edit parameters or choose per-round automatic execution. Numerical work runs in a browser worker. Connected actions: inventory inspection, EIS fitting, grouped capacity prediction and analytic one-RC pulse/rest simulation. The last uses illustrative, user-editable parameters and is not PyBaMM or measured-cell identification.
+
+The live endpoint is https://api.sciencesloop.com/api/battery-agent and the deployed demo is https://sciencesloop.com/agent/battery-research/?lang=zh . This repository contains the frontend and numerical sources; model credentials remain only in the backend deployment. No arbitrary runtime code generation, literature-search action or instrument control is implemented. The [scenario/tool design study](docs/scenario-tool-design.md) covers battery analysis and simulation packages, input requirements, interpretation checks and integration status; PyBaMM/PyBOP and other listed integration candidates are not claimed as live tools.
 
 ## Reproduce
 
