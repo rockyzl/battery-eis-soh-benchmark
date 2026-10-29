@@ -1,0 +1,375 @@
+{
+  "schema": "battery-agent-scenarios-v1",
+  "reviewed": "2026-10-29",
+  "scenarios": [
+    {
+      "id": "ingest",
+      "title": {
+        "en": "What measurements do these files contain?",
+        "zh": "这些文件是什么测量，能做哪些分析？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Original vendor files, export definitions, units, cell IDs and test protocol.",
+        "zh": "需要仪器原始文件、导出列定义、单位、电池编号和测试程序。"
+      },
+      "tools": [
+        "vendor parser: cellpy / BEEP / yadg",
+        "schema and unit audit: battdat",
+        "step and cell alignment"
+      ],
+      "gate": {
+        "en": "Select a verified format adapter. Preserve original values and provenance; do not infer experiment type from filename alone.",
+        "zh": "先验证格式适配器，保留原始值与来源；不能只凭文件名认定实验类型。"
+      },
+      "sources": [
+        {
+          "label": "Battery Data Toolkit",
+          "url": "https://rovi-org.github.io/battery-data-toolkit/"
+        },
+        {
+          "label": "yadg electrochemistry parser",
+          "url": "https://dgbowl.github.io/yadg/main/parsers.electrochem.html"
+        },
+        {
+          "label": "BEEP software paper",
+          "url": "https://doi.org/10.1016/j.softx.2020.100506"
+        }
+      ]
+    },
+    {
+      "id": "eis",
+      "title": {
+        "en": "How has the EIS spectrum changed?",
+        "zh": "不同阶段的 EIS 有什么变化？"
+      },
+      "status": "live",
+      "inputs": {
+        "en": "Frequency, real/imaginary impedance, cell and diagnostic index; matched temperature, SOC and rest context.",
+        "zh": "需要频率、阻抗实部/虚部、电池编号与诊断序号；比较时需匹配温度、SOC 和静置条件。"
+      },
+      "tools": [
+        "inspect_data",
+        "KK reference review",
+        "fit_eis: CPE / RC comparison",
+        "compare_eis_hypotheses: fixed / R0-only / full refit",
+        "intermediate interpretation",
+        "repeat or metadata check"
+      ],
+      "gate": {
+        "en": "Connected now: public spectra, browser CPE fit and existing impedance.py references. No unique mechanism follows from a small residual.",
+        "zh": "已接入：公开实测谱、浏览器 CPE 拟合、现有 impedance.py 参考。小残差不能确认唯一机制。"
+      },
+      "sources": [
+        {
+          "label": "impedance.py validation",
+          "url": "https://impedancepy.readthedocs.io/en/latest/validation.html"
+        }
+      ]
+    },
+    {
+      "id": "drt",
+      "title": {
+        "en": "Can overlapping time constants be resolved?",
+        "zh": "重叠的阻抗过程能否进一步分辨？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Condition-matched EIS covering an adequate frequency range; noise and residual context.",
+        "zh": "需要条件匹配、频率范围足够的 EIS，以及噪声与残差信息。"
+      },
+      "tools": [
+        "EIS consistency check",
+        "pyimpspec DRT",
+        "regularization sensitivity",
+        "circuit hypothesis comparison"
+      ],
+      "gate": {
+        "en": "Check KK before DRT. Compare regularization choices; do not label every peak as a distinct physical process. Not connected to the live agent.",
+        "zh": "先检查 KK，再检验正则化敏感性；不能把每个峰直接指定为物理过程。本对话尚未接入 DRT。"
+      },
+      "sources": [
+        {
+          "label": "pyimpspec DRT guide",
+          "url": "https://vyrjana.github.io/pyimpspec/guide_drt.html"
+        }
+      ]
+    },
+    {
+      "id": "cycling",
+      "title": {
+        "en": "Where does capacity or efficiency change?",
+        "zh": "容量、效率在哪些阶段发生变化？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Time, current, voltage, step/cycle IDs and charge/discharge definitions.",
+        "zh": "需要时间、电流、电压、步骤/循环编号以及充放电容量定义。"
+      },
+      "tools": [
+        "cellpy / PyProBE / BEEP import",
+        "CC/CV/rest segmentation",
+        "capacity and efficiency summary",
+        "matched-condition comparison"
+      ],
+      "gate": {
+        "en": "Check sign conventions, capacity resets, cutoffs and actual temperature/rate. Shared aging histories are not independent cells.",
+        "zh": "核对正负号、容量清零、截止条件及温度/倍率；同一电池的多圈不能当成独立电池。"
+      },
+      "sources": [
+        {
+          "label": "BEEP software paper",
+          "url": "https://doi.org/10.1016/j.softx.2020.100506"
+        },
+        {
+          "label": "PyProBE pulsing analysis",
+          "url": "https://pyprobe.readthedocs.io/en/stable/examples/analysing-GITT-data.html"
+        }
+      ]
+    },
+    {
+      "id": "ica",
+      "title": {
+        "en": "Are differential-capacity features changing?",
+        "zh": "dQ/dV 或 dV/dQ 的特征是否变化？"
+      },
+      "status": "live",
+      "inputs": {
+        "en": "Suitable constant-current half-cycles with voltage/capacity resolution and current/temperature metadata.",
+        "zh": "需要合适的恒流半周期，足够的电压/容量分辨率，以及电流、温度记录。"
+      },
+      "tools": [
+        "inspect_data",
+        "analyze_dqdv: guarded local CSV calculation",
+        "intermediate assessment",
+        "preprocessing and follow-up review"
+      ],
+      "gate": {
+        "en": "Selected local cycling CSV is connected to chat after consent for computed summaries. This adapter is not the full cellpy ICA/DVA package. Extrema are preprocessing-dependent; no unique LLI/LAM claim.",
+        "zh": "所选本地循环 CSV 在同意发送计算摘要后可用于对话。此适配器不是完整 cellpy ICA/DVA；极值依赖预处理，不能指定唯一 LLI/LAM。"
+      },
+      "sources": [
+        {
+          "label": "cellpy ICA / DVA",
+          "url": "https://cellpy.readthedocs.io/en/stable/examples/04_incremental_capacity_analysis/"
+        },
+        {
+          "label": "ICA best practices",
+          "url": "https://www.frontiersin.org/journals/energy-research/articles/10.3389/fenrg.2022.1023555/full"
+        },
+        {
+          "label": "2023 correction: Figure 13",
+          "url": "https://www.frontiersin.org/journals/energy-research/articles/10.3389/fenrg.2023.1203569/full"
+        }
+      ]
+    },
+    {
+      "id": "dma",
+      "title": {
+        "en": "Which electrode-level degradation modes fit the data?",
+        "zh": "哪些电极层面的衰减模式与数据相符？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Low-rate pseudo-OCV/full-cell curves and chemistry-matched positive/negative half-cell OCP references.",
+        "zh": "需要低倍率准 OCV/全电池曲线，以及化学体系匹配的正负极半电池 OCP 参考。"
+      },
+      "tools": [
+        "ICA / DVA review",
+        "PyProBE OCV fit or PyDMA",
+        "multi-start / fit-window checks",
+        "held-out voltage reconstruction"
+      ],
+      "gate": {
+        "en": "Require relevant electrode references; report competing fits and uncertainty before LLI/LAM interpretation. No universal electrode curve is assumed.",
+        "zh": "先取得匹配电极参考，检查多起点、拟合区间与替代解，再解释 LLI/LAM；不能套用通用电极曲线。"
+      },
+      "sources": [
+        {
+          "label": "TUM PyDMA",
+          "url": "https://github.com/tum-ees/pydma"
+        }
+      ]
+    },
+    {
+      "id": "pulse",
+      "title": {
+        "en": "Does pulse resistance rise at matched SOC?",
+        "zh": "相同 SOC 下的脉冲电阻是否升高？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Time-resolved voltage and current around real current steps, pulse/rest IDs, SOC and temperature.",
+        "zh": "需要真实电流阶跃附近的时间、电流、电压，脉冲/静置编号、SOC 和温度。"
+      },
+      "tools": [
+        "pulse segmentation",
+        "PyProBE pulsing resistance",
+        "fixed-delay ΔV/ΔI",
+        "SOC/temperature matched comparison"
+      ],
+      "gate": {
+        "en": "Report the time delay and sign convention. A 10-second resistance is not high-frequency ohmic resistance or a full EIS spectrum.",
+        "zh": "明确采样延时与符号；10 秒电阻不等于高频欧姆电阻，更不是完整 EIS 谱。"
+      },
+      "sources": [
+        {
+          "label": "PyProBE pulsing analysis",
+          "url": "https://pyprobe.readthedocs.io/en/stable/examples/analysing-GITT-data.html"
+        }
+      ]
+    },
+    {
+      "id": "gitt",
+      "title": {
+        "en": "What transport information can GITT support?",
+        "zh": "GITT 能支持哪些扩散相关结论？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Galvanostatic pulses and relaxation, adequate time sampling, geometry/active-material inputs and model assumptions.",
+        "zh": "需要恒流脉冲与弛豫段、足够时间采样、几何/活性材料参数及模型假设。"
+      },
+      "tools": [
+        "pulse/rest detection",
+        "polarization and relaxation checks",
+        "selected GITT diffusion model",
+        "fit-window and geometry sensitivity"
+      ],
+      "gate": {
+        "en": "Assess relaxation, early transients and geometry. If assumptions or area are unknown, report measured relaxation/polarization and missing inputs instead of D.",
+        "zh": "检查弛豫、早期瞬态与几何；假设或面积未知时，报告实测极化/弛豫及缺失参数，暂停给 D 值。"
+      },
+      "sources": [
+        {
+          "label": "Kang & Chueh GITT review",
+          "url": "https://doi.org/10.1149/1945-7111/ac3940"
+        },
+        {
+          "label": "PyProBE pulsing analysis",
+          "url": "https://pyprobe.readthedocs.io/en/stable/examples/analysing-GITT-data.html"
+        }
+      ]
+    },
+    {
+      "id": "pitt",
+      "title": {
+        "en": "What transport information can PITT support?",
+        "zh": "PITT 电位阶跃能支持哪些扩散结论？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Applied potential steps, measured current transients, timing, electrode geometry and applicable transport regime.",
+        "zh": "需要施加电位阶跃、电流瞬态、时间、几何参数及适用传输区间。"
+      },
+      "tools": [
+        "potential-step detection",
+        "transient / background checks",
+        "appropriate PITT model",
+        "time-window sensitivity"
+      ],
+      "gate": {
+        "en": "PITT current transients are not interchangeable with GITT voltage relaxation. Charge transfer and capacitive contributions must be considered.",
+        "zh": "PITT 的电流瞬态不能直接套 GITT 的电压弛豫公式；须考虑电荷转移与电容贡献。"
+      },
+      "sources": [
+        {
+          "label": "BioLogic Application Note 70",
+          "url": "https://www.biologic.net/documents/determination-diffusion-coefficient-inserted-species-host-electrode-eis-pitt-gitt-techniques-an70/"
+        },
+        {
+          "label": "Kang & Chueh GITT review",
+          "url": "https://doi.org/10.1149/1945-7111/ac3940"
+        }
+      ]
+    },
+    {
+      "id": "mechanistic",
+      "title": {
+        "en": "Can a physical model reproduce measured voltage?",
+        "zh": "物理模型能否解释实际电压响应？"
+      },
+      "status": "research",
+      "inputs": {
+        "en": "Current/temperature protocol, voltage trace, cell design, chemistry-specific parameters and initial state.",
+        "zh": "需要电流/温度程序、电压记录、电池结构、体系参数与初始状态。"
+      },
+      "tools": [
+        "PyBaMM model selection",
+        "PyBOP parameter estimation",
+        "parameter sensitivity / alternative fits",
+        "held-out protocol validation"
+      ],
+      "gate": {
+        "en": "Default parameter sets describe particular cells. Fit does not establish identifiability; do not transfer parameters silently to another chemistry.",
+        "zh": "默认参数集对应特定电池；拟合误差小不代表参数可辨识，也不能直接跨化学体系移植。"
+      },
+      "sources": [
+        {
+          "label": "PyBaMM parameter sets",
+          "url": "https://docs.pybamm.org/en/latest/source/examples/notebooks/getting_started/tutorial-4-setting-parameter-values.html"
+        },
+        {
+          "label": "PyBOP",
+          "url": "https://github.com/pybop-team/PyBOP"
+        }
+      ]
+    },
+    {
+      "id": "rc_simulation",
+      "title": {
+        "en": "What voltage response does an RC model predict?",
+        "zh": "给定 RC 参数，会产生怎样的电压响应？"
+      },
+      "status": "live",
+      "inputs": {
+        "en": "User-approved OCV, current, R0, R1, time constant and pulse duration.",
+        "zh": "需要确认 OCV、电流、R0、R1、时间常数与脉冲时长。"
+      },
+      "tools": [
+        "inspect_data",
+        "simulate_pulse: analytic Thevenin response",
+        "intermediate assessment",
+        "parameter revision"
+      ],
+      "gate": {
+        "en": "Actual forward computation is connected. Illustrative parameters, fixed OCV; not calibrated to the measured cell and not PyBaMM.",
+        "zh": "已接入实际前向计算。使用说明性参数、固定 OCV；尚未对实测电池辨识参数，也不是 PyBaMM。"
+      },
+      "sources": [
+        {
+          "label": "Time-domain ECM parameterisation",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13049963/"
+        }
+      ]
+    },
+    {
+      "id": "forecast",
+      "title": {
+        "en": "Does the prediction outperform simple baselines?",
+        "zh": "预测是否优于简单基线？"
+      },
+      "status": "live",
+      "inputs": {
+        "en": "Aligned EIS/capacity histories and future labels for independent cells.",
+        "zh": "需要对齐的 EIS/容量历史，以及独立电池的未来实测标签。"
+      },
+      "tools": [
+        "inspect_data",
+        "cell-grouped ridge selection",
+        "predict_capacity",
+        "persistence / training-mean comparison"
+      ],
+      "gate": {
+        "en": "Connected now for the public cohort. Split by cell and time appropriately. Current default EIS model loses to persistence; this remains visible.",
+        "zh": "公开数据已接入。按电池与时间正确划分；当前默认 EIS 模型不如沿用当前容量，保留此结果。"
+      },
+      "sources": [
+        {
+          "label": "BEEP software paper",
+          "url": "https://doi.org/10.1016/j.softx.2020.100506"
+        }
+      ]
+    }
+  ]
+}
